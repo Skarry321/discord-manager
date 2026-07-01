@@ -2,10 +2,13 @@ const { Client, GatewayIntentBits, ActivityType, AttachmentBuilder } = require('
 const fs = require('fs');
 const path = require('path');
 
-const CONFIG_PATH = path.join(process.env.APPDATA || (process.platform === 'darwin' ? process.env.HOME + '/Library/Application Support' : process.env.HOME + '/.config'), 'discord-manager', 'config.json');
+const CONFIG_PATH = process.env.CONFIG_PATH || path.join(process.env.APPDATA || (process.platform === 'darwin' ? process.env.HOME + '/Library/Application Support' : process.env.HOME + '/.config'), 'discord-manager', 'config.json');
 
 function loadConfig() {
-  try { return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8')); } catch { return {}; }
+  try {
+    if (fs.existsSync(CONFIG_PATH)) return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
+  } catch {}
+  return {};
 }
 
 function getSettings(guildId) {
@@ -17,7 +20,7 @@ console.log('[BOT] Starting Discord Manager Bot...');
 console.log('[BOT] Config path:', CONFIG_PATH);
 
 const config = loadConfig();
-const token = config.botToken;
+const token = process.env.BOT_TOKEN || config.botToken;
 if (!token) {
   console.log('[BOT] No bot token found in config. Run the app first to set up.');
   process.exit(1);
