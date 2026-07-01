@@ -214,7 +214,7 @@ client.on('messageCreate', async (message) => {
     const gs = message.guild.channels.cache.filter(c => c.type === 0 || c.type === 5);
     const kw = { support: ['support', 'поддержк', 'помощ'], donat: ['donat', 'донат', 'привиле'], ideas: ['idea', 'иде', 'предлож'], complaint: ['complaint', 'жалоб', 'репорт'] };
         const texts = {
-      support: '**Приветствуем Вас в канале поддержки Discord сервера HideRealm**\nЧтобы задать свой вопрос, нажмите на кнопку под данным сообщением!\n\n**ВАЖНАЯ ИНФОРМАЦИЯ:**\n— В данном канале действуют все правила, прописанные в правил',
+      support: '**Приветствуем Вас в канале поддержки Discord сервера HideRealm**\nЧтобы задать свой вопрос, нажмите на кнопку под данным сообщением!\n\n**ВАЖНАЯ ИНФОРМАЦИЯ:**\n— В данном канале действуют все правила, прописанные в #правила',
       donat: 'Как получить роль, соответствующую вашей привилегии?\n1. Нажмите на кнопку под данным сообщением.\n2. Следуйте указаниям бота в новом созданном канале.\n\n@IMMORTAL\n@CRUSADER\n@DESTROYER\n@PALADIN\n@ELITE\n@GUARDIAN\n@LORD',
       ideas: 'В данном канале можно отправить идею\nлибо для Гриферского режима, либо для Discord сервера.',
       complaint: '**Жалобы на нарушения на Discord сервере**\nВ данном канале Вы можете отправить жалобу на нарушение, которое произошло на Discord сервере.\nМы не принимаем жалобы на нарушения, произошедшие на Minecraft сервере!'
@@ -224,8 +224,19 @@ client.on('messageCreate', async (message) => {
     for (const [t, words] of Object.entries(kw)) {
       const ch = gs.find(c => words.some(w => c.name.toLowerCase().includes(w)));
       if (ch) {
+        let msg = texts[t];
+        // Replace @ROLENAME with actual role mentions
+        msg = msg.replace(/@(\w+)/g, (match, name) => {
+          const role = message.guild.roles.cache.find(r => r.name.toLowerCase() === name.toLowerCase());
+          return role ? role.toString() : match;
+        });
+        // Replace #channelname with actual channel mentions
+        msg = msg.replace(/#(\S+)/g, (match, name) => {
+          const ch = message.guild.channels.cache.find(c => c.name.toLowerCase() === name.toLowerCase());
+          return ch ? ch.toString() : match;
+        });
         const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('ticket_' + t).setLabel(btns[t]).setStyle(ButtonStyle.Primary));
-        await ch.send({ content: texts[t], components: [row] });
+        await ch.send({ content: msg, components: [row] });
         cnt++;
       }
     }
