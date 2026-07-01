@@ -222,7 +222,7 @@ client.on('messageCreate', async (message) => {
     message.reply('✅ Настроено ' + cnt + ' тикет-панелей');
     return;
   }
-}););
+});
 
 
 // Ticket button handler
