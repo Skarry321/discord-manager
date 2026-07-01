@@ -52,9 +52,10 @@ export async function startBot(token: string): Promise<void> {
 
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
-      addLog('ERROR', 'Bot connection timeout');
+      addLog('ERROR', 'Bot connection timeout (30s). Check token and intents.');
       reject(new Error('Bot connection timeout'));
     }, 30000);
+
     client!.once('ready', () => {
       clearTimeout(timeout);
       addLog('INFO', `Bot connected as ${client!.user?.tag} (ID: ${client!.user?.id})`);
@@ -64,15 +65,31 @@ export async function startBot(token: string): Promise<void> {
       statsInterval = setInterval(buildStats, 60000);
       resolve();
     });
-    client!.once('error', (e) => {
-      clearTimeout(timeout);
-      addLog('ERROR', e.message);
-      reject(e);
+
+    client!.on('error', (e) => {
+      addLog('ERROR', `Client error: ${e.message}`);
     });
+
     client!.on('warn', (w) => addLog('WARN', w));
-    client!.login(token).catch((e) => {
+
+    client!.on('shardError', (e) => {
+      addLog('ERROR', `Shard error: ${e.message}`);
+    });
+
+    client!.login(token).then(() => {
+      addLog('INFO', 'Login successful, waiting for ready...');
+    }).catch((e: any) => {
       clearTimeout(timeout);
-      addLog('ERROR', `Login failed: ${e.message}`);
+      const msg = e.message || String(e);
+      if (msg.includes('TOKEN_INVALID')) {
+        addLog('ERROR', 'Invalid bot token! Reset it in Developer Portal and update the app.');
+      } else if (msg.includes('DISALLOWED_INTENTS')) {
+        addLog('ERROR', 'Intents not enabled! Enable Privileged Gateway Intents in Developer Portal > Bot.');
+      } else if (msg.includes('connection')) {
+        addLog('ERROR', 'Connection refused. Check your internet/firewall.');
+      } else {
+        addLog('ERROR', `Login failed: ${msg}`);
+      }
       reject(e);
     });
   });

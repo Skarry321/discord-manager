@@ -69,7 +69,9 @@ ipcMain.handle('connect', async (_event, token: string, isBot?: boolean) => {
   try {
     await connect(token, !!isBot);
     if (isBot) {
-      startBot(token).catch(() => {});
+      startBot(token).catch((err: Error) => {
+        console.error('Bot failed:', err.message);
+      });
     }
     saveConfig({ token: isBot ? `BOT:${token}` : token, botToken: isBot ? token : undefined });
     return { success: true };
