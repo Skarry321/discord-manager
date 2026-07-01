@@ -288,3 +288,62 @@ export const ALL_PERMISSIONS: { key: string; bit: string; label: string }[] = [
   { key: 'USE_EXTERNAL_SOUNDS', bit: '549755813888', label: 'Use External Sounds' },
   { key: 'SEND_VOICE_MESSAGES', bit: '70368744177664', label: 'Send Voice Messages' },
 ];
+
+export async function sendChannelMessage(channelId: string, content: string, options?: { embed?: any; fileBase64?: string; fileName?: string }): Promise<any> {
+  if (options?.fileBase64) {
+    const matches = options.fileBase64.match(/^data:image\/(\w+);base64,(.+)$/);
+    if (matches) {
+      const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+      const buffer = Buffer.from(matches[2], 'base64');
+      const boundary = '----FormBoundary' + Math.random().toString(36).slice(2);
+      let body = '';
+      const fileName = options.fileName || `image.${ext}`;
+      const crlf = '\r\n';
+      if (options?.embed) {
+        body += `--${boundary}${crlf}`;
+        body += `Content-Disposition: form-data; name="payload_json"${crlf}`;
+        body += `Content-Type: application/json${crlf}${crlf}`;
+        const payload: any = {};
+        if (content) payload.content = content;
+        payload.embeds = [{ ...options.embed, image: { url: `attachment://${fileName}` } }];
+        body += JSON.stringify(payload) + crlf;
+      } else {
+        body += `--${boundary}${crlf}`;
+        body += `Content-Disposition: form-data; name="payload_json"${crlf}`;
+        body += `Content-Type: application/json${crlf}${crlf}`;
+        body += JSON.stringify({ content: content || '' }) + crlf;
+      }
+      body += `--${boundary}${crlf}`;
+      body += `Content-Disposition: form-data; name="files[0]"; filename="${fileName}"${crlf}`;
+      body += `Content-Type: image/${ext}${crlf}${crlf}`;
+      const bodyBuffer = Buffer.concat([
+        Buffer.from(body, 'utf-8'),
+        buffer,
+        Buffer.from(`${crlf}--${boundary}--${crlf}`, 'utf-8'),
+      ]);
+      if (!token) throw new Error('Not authenticated');
+      const res = await fetch(`${API_BASE}/channels/${channelId}/messages`, {
+        method: 'POST',
+        headers: {
+          Authorization: token,
+          'Content-Type': 'multipart/form-data; boundary=' + boundary,
+          'User-Agent': 'DiscordManager/1.0',
+        },
+        body: bodyBuffer,
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Discord API ${res.status}: ${text}`);
+      }
+      return res.json();
+    }
+  }
+  const body: any = {};
+  if (options?.embed) {
+    body.embeds = [options.embed];
+    if (content && !options.embed.description) options.embed.description = content;
+  } else {
+    body.content = content || '';
+  }
+  return api('POST', `/channels/${channelId}/messages`, body);
+}

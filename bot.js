@@ -52,7 +52,9 @@ client.on('guildCreate', (g) => console.log('[BOT] Added to:', g.name));
 client.on('guildDelete', (g) => console.log('[BOT] Removed from:', g.name || g.id));
 
 client.on('guildMemberAdd', async (member) => {
+  console.log('[GUILD_MEMBER_ADD] ' + member.user.tag + ' on ' + member.guild.name);
   const s = getSettings(member.guild.id);
+  console.log('[AUTO-ROLE] Checking config for ' + member.guild.id + ': autoRole=' + (s.autoRole || 'none'));
   if (s.autoRole) {
     try { await member.roles.add(s.autoRole); console.log(`[AUTO-ROLE] ${member.user.tag}`); }
     catch (e) { console.log('[AUTO-ROLE ERROR]', e.message); }

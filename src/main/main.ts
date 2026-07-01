@@ -484,3 +484,13 @@ ipcMain.handle('select-file', async () => {
   });
   return { filePath: result.canceled ? null : result.filePaths[0] };
 });
+
+ipcMain.handle('send-channel-message', async (_event, channelId: string, content: string, options?: any) => {
+  try {
+    const { sendChannelMessage } = await import('./discordService');
+    await sendChannelMessage(channelId, content, options);
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+});

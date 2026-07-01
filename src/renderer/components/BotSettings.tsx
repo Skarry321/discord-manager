@@ -52,6 +52,7 @@ export default function BotSettings() {
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [msgForm, setMsgForm] = useState({ channel: '', text: '', type: 'text', color: '#7c3aed', title: '', footer: '', image: '' });
 
   useEffect(() => {
     if (!selectedGuild) return;
@@ -101,6 +102,30 @@ export default function BotSettings() {
       setMessage({ text: res.success ? `✅ Тест отправлен в #${ch?.name || '?'}` : `❌ ${res.error}`, error: !res.success });
     } catch (e: any) {
       setMessage({ text: `❌ ${e.message}`, error: true });
+    }
+    setSending(false);
+  };
+
+  const handleSendMsg = async () => {
+    if (!msgForm.channel || !msgForm.text) return;
+    setSending(true);
+    try {
+      const options: any = {};
+      const isBase64 = msgForm.image && msgForm.image.startsWith('data:');
+      if (msgForm.type === 'embed') {
+        options.embed = { description: msgForm.text, color: parseInt(msgForm.color.replace('#', ''), 16) || 0x7c3aed };
+        if (msgForm.title) options.embed.title = msgForm.title;
+        if (msgForm.footer) options.embed.footer = { text: msgForm.footer };
+        if (msgForm.image && !isBase64) options.embed.image = { url: msgForm.image };
+      }
+      if (isBase64) {
+        options.fileBase64 = msgForm.image;
+        options.fileName = 'image.png';
+      }
+      const res = await window.api.sendChannelMessage(msgForm.channel, msgForm.type === 'text' ? msgForm.text : '', options);
+      setMessage({ text: res.success ? '✅ Сообщение отправлено' : '❌ ' + (res.error || 'Ошибка'), error: !res.success });
+    } catch (e: any) {
+      setMessage({ text: '❌ ' + e.message, error: true });
     }
     setSending(false);
   };
@@ -239,6 +264,63 @@ export default function BotSettings() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* SEND MESSAGE */}
+      <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 20, marginBottom: 16 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>💬 Отправить сообщение от бота</h3>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>Напиши текст и выбери канал — бот отправит сообщение</p>
+
+        <div className="form-group">
+          <label>Канал</label>
+          <select value={msgForm.channel} onChange={e => setMsgForm(f => ({ ...f, channel: e.target.value }))}>
+            <option value="">— Выбери канал —</option>
+            {textChannels.map((ch: any) => <option key={ch.id} value={ch.id}># {ch.name}</option>)}
+          </select>
+        </div>
+
+        {msgForm.channel && (
+          <>
+            <div className="form-group">
+              <label>Тип</label>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button className={`btn btn-sm ${msgForm.type === 'text' ? 'btn-primary' : ''}`} onClick={() => setMsgForm(f => ({ ...f, type: 'text' }))}>💬 Текст</button>
+                <button className={`btn btn-sm ${msgForm.type === 'embed' ? 'btn-primary' : ''}`} onClick={() => setMsgForm(f => ({ ...f, type: 'embed' }))}>📦 Embed</button>
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Текст</label>
+              <textarea value={msgForm.text} onChange={e => setMsgForm(f => ({ ...f, text: e.target.value }))} rows={3} style={{ fontSize: 13 }} placeholder="Введите текст сообщения..." />
+            </div>
+            {msgForm.type === 'embed' && (
+              <>
+                <div className="form-group">
+                  <label>Цвет</label>
+                  <input type="color" value={msgForm.color || '#7c3aed'} onChange={e => setMsgForm(f => ({ ...f, color: e.target.value }))} style={{ width: 48, height: 36 }} />
+                </div>
+                <div className="form-group">
+                  <label>Заголовок</label>
+                  <input type="text" value={msgForm.title} onChange={e => setMsgForm(f => ({ ...f, title: e.target.value }))} style={{ fontSize: 12 }} />
+                </div>
+                <div className="form-group">
+                  <label>Подвал</label>
+                  <input type="text" value={msgForm.footer} onChange={e => setMsgForm(f => ({ ...f, footer: e.target.value }))} style={{ fontSize: 12 }} />
+                </div>
+              </>
+            )}
+            <div className="form-group">
+              <label>Изображение / GIF</label>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input type="text" value={msgForm.image} onChange={e => setMsgForm(f => ({ ...f, image: e.target.value }))} placeholder="https://example.com/image.png" style={{ flex: 1, fontSize: 12 }} />
+                <button className="btn btn-sm" onClick={async () => { const r = await window.api.uploadWelcomeImage(); if (r.success && r.data) { setMsgForm(f => ({ ...f, image: r.data || '' })); setMessage({ text: '✅ Изображение загружено', error: false }); } }}>📁 Загрузить</button>
+              </div>
+              {msgForm.image && msgForm.image.startsWith('data:') && <div style={{ marginTop: 4, fontSize: 11, color: 'var(--green)' }}>✅ Файл загружен</div>}
+            </div>
+            <button className="btn btn-primary btn-block" onClick={handleSendMsg} disabled={sending}>
+              {sending ? '⏳ Отправка...' : '🚀 Отправить'}
+            </button>
+          </>
+        )}
       </div>
 
       {/* REQUIREMENTS */}

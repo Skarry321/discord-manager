@@ -104,6 +104,7 @@ declare global {
       setBotSettings: (guildId: string, settings: any) => Promise<{ success: boolean }>;
       uploadWelcomeImage: () => Promise<{ success: boolean; data?: string; fileName?: string; error?: string }>;
       sendTestWelcome: (guildId: string, channelId: string, settings: any) => Promise<{ success: boolean; error?: string }>;
+      sendChannelMessage: (channelId: string, content: string, options?: any) => Promise<{ success: boolean; error?: string }>;
 
       getGuilds: () => Promise<{ success: boolean; data?: DiscordGuild[]; error?: string }>;
       getGuild: (id: string) => Promise<{ success: boolean; data?: DiscordGuildFull; error?: string }>;
