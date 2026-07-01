@@ -244,10 +244,10 @@ client.on('interactionCreate', async (interaction) => {
   const type = interaction.customId.slice(7);
   const typeNames = { support: 'Support', donat: 'Donat', ideas: 'Ideas', complaint: 'Complaint' };
   const msgs = {
-    support: '\\uD83D\\uDEE0\\uFE0F Welcome! Describe your issue and wait for staff.',
-    donat: '\\uD83C\\uDFC6 Donation verification. Send your proof of donation.',
-    ideas: '\\uD83D\\uDCA1 Share your idea for the server!',
-    complaint: '\\uD83D\\uDC6E File a complaint. Describe with evidence.'
+    support: '🛠️ Опишите вашу проблему, ожидайте ответа персонала.',
+    donat: '🏆 Отправьте скрин подтверждения доната для получения роли.',
+    ideas: '💡 Опишите вашу идею для сервера!',
+    complaint: '👮 Опишите ситуацию и прикрепите доказательства.'
   };
   await interaction.reply({ content: '⏳ Creating ticket...', ephemeral: true });
   try {
