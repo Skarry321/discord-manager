@@ -1,13 +1,11 @@
 ﻿const { Client, GatewayIntentBits, ActivityType, AttachmentBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
+const url = require('url');
 
-const CONFIG_PATH = process.env.CONFIG_PATH || path.join(
-  process.env.APPDATA || (process.platform === 'darwin'
-    ? process.env.HOME + '/Library/Application Support'
-    : process.env.HOME + '/.config'),
-  'discord-manager', 'config.json'
-);
+const CONFIG_PATH = process.env.CONFIG_PATH || path.join(process.env.RAILWAY_VOLUME || '', 'config.json');
+const PORT = process.env.PORT || 3000;
 
 function loadConfig() {
   try {
@@ -15,6 +13,68 @@ function loadConfig() {
   } catch {}
   return {};
 }
+
+function saveConfig(data) {
+  try {
+    const dir = path.dirname(CONFIG_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const existing = loadConfig();
+    const merged = { ...existing, ...data };
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(merged, null, 2), 'utf-8');
+  } catch (e) { console.log('[CONFIG] Save error:', e.message); }
+}
+
+// HTTP API server for remote config
+const server = http.createServer((req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') { res.end(); return; }
+
+  const parsed = url.parse(req.url, true);
+  const parts = parsed.pathname.split('/').filter(Boolean);
+
+  if (req.method === 'GET' && parts[0] === 'api' && parts[1] === 'config' && parts[2]) {
+    const config = loadConfig();
+    const guildId = parts[2];
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ settings: config.botSettings?.[guildId] || {} }));
+    return;
+  }
+
+  if (req.method === 'POST' && parts[0] === 'api' && parts[1] === 'config' && parts[2]) {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        const config = loadConfig();
+        if (!config.botSettings) config.botSettings = {};
+        const guildId = parts[2];
+        config.botSettings[guildId] = { ...(config.botSettings[guildId] || {}), ...data };
+        Object.keys(config.botSettings[guildId]).forEach(k => {
+          if (config.botSettings[guildId][k] === null) delete config.botSettings[guildId][k];
+        });
+        if (Object.keys(config.botSettings[guildId]).length === 0) delete config.botSettings[guildId];
+        saveConfig({ botSettings: config.botSettings });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+        console.log('[API] Config updated for', guildId, data);
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  res.writeHead(404); res.end();
+});
+
+server.listen(PORT, () => {
+  console.log(`[API] Server listening on port ${PORT}`);
+});
 
 function getSettings(guildId) {
   const config = loadConfig();
@@ -147,6 +207,63 @@ client.on('messageCreate', async (message) => {
     } catch (e) {
       message.reply('\u274C ' + e.message).then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
     }
+  }
+
+  if (cmd === 'setautorole' || cmd === 'autorole') {
+    if (!message.member?.permissions.has('Administrator')) return message.reply('\u274C \u041D\u0443\u0436\u043D\u044B \u043F\u0440\u0430\u0432\u0430 \u0430\u0434\u043C\u0438\u043D\u0430').then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
+    const role = message.mentions.roles.first();
+    if (!role) return message.reply('\u274C \u0423\u043A\u0430\u0436\u0438 \u0440\u043E\u043B\u044C: `.setautorole @\u0440\u043E\u043B\u044C`').then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
+    const c = loadConfig();
+    if (!c.botSettings) c.botSettings = {};
+    if (!c.botSettings[message.guild.id]) c.botSettings[message.guild.id] = {};
+    c.botSettings[message.guild.id].autoRole = role.id;
+    saveConfig({ botSettings: c.botSettings });
+    message.reply('\u2705 \u0410\u0432\u0442\u043E\u0440\u043E\u043B\u044C \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u0430: ' + role.name).then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
+    return;
+  }
+
+  if (cmd === 'removeautorole') {
+    if (!message.member?.permissions.has('Administrator')) return;
+    const c = loadConfig();
+    if (c.botSettings?.[message.guild.id]?.autoRole) {
+      delete c.botSettings[message.guild.id].autoRole;
+      if (Object.keys(c.botSettings[message.guild.id]).length === 0) delete c.botSettings[message.guild.id];
+      saveConfig({ botSettings: c.botSettings });
+      message.reply('\u2705 \u0410\u0432\u0442\u043E\u0440\u043E\u043B\u044C \u0443\u0434\u0430\u043B\u0435\u043D\u0430').then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
+    }
+    return;
+  }
+
+  if (cmd === 'setwelcome') {
+    if (!message.member?.permissions.has('Administrator')) return;
+    const ch = message.mentions.channels.first();
+    if (!ch) return message.reply('\u274C \u0423\u043A\u0430\u0436\u0438 \u043A\u0430\u043D\u0430\u043B: `.setwelcome #\u043A\u0430\u043D\u0430\u043B \u0442\u0435\u043A\u0441\u0442`').then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
+    const text = args.slice(2).join(' ') || '\u0414\u043E\u0431\u0440\u043E \u043F\u043E\u0436\u0430\u043B\u043E\u0432\u0430\u0442\u044C, {mention}!';
+    const c = loadConfig();
+    if (!c.botSettings) c.botSettings = {};
+    if (!c.botSettings[message.guild.id]) c.botSettings[message.guild.id] = {};
+    c.botSettings[message.guild.id].welcomeChannel = ch.id;
+    c.botSettings[message.guild.id].welcomeMessage = text;
+    saveConfig({ botSettings: c.botSettings });
+    message.reply('\u2705 \u041F\u0440\u0438\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u0435 \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043D\u043E \u0432 #' + ch.name).then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
+    return;
+  }
+
+  if (cmd === 'settings') {
+    if (!message.member?.permissions.has('Administrator')) return;
+    const s = getSettings(message.guild.id);
+    const lines = [];
+    if (s.autoRole) {
+      const r = message.guild.roles.cache.get(s.autoRole);
+      lines.push('\uD83C\uDFAF \u0410\u0432\u0442\u043E\u0440\u043E\u043B\u044C: ' + (r ? r.name : 'ID: ' + s.autoRole));
+    } else lines.push('\uD83C\uDFAF \u0410\u0432\u0442\u043E\u0440\u043E\u043B\u044C: \u043D\u0435 \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043D\u0430');
+    if (s.welcomeChannel) {
+      const c = message.guild.channels.cache.get(s.welcomeChannel);
+      lines.push('\uD83D\uDC4B \u041F\u0440\u0438\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u0435: #' + (c ? c.name : s.welcomeChannel));
+      lines.push('\uD83D\uDCDD \u0422\u0435\u043A\u0441\u0442: ' + (s.welcomeMessage || '\u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u043D\u044B\u0439'));
+    } else lines.push('\uD83D\uDC4B \u041F\u0440\u0438\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u0435: \u043D\u0435 \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043D\u043E');
+    message.reply(lines.join('\n')).then(m => setTimeout(() => m.delete().catch(() => {}), 10000));
+    return;
   }
 });
 

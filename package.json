@@ -5,9 +5,7 @@
   "main": "dist/main/main.js",
   "scripts": {
     "build": "node build.js",
-    "start": "node bot.js",
-    "start:app": "npm run build && electron .",
-    "dev": "npm run build && electron .",
+    "start": "npm run build && electron .",
     "bot": "node bot.js"
   },
   "dependencies": {

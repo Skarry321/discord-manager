@@ -69,6 +69,11 @@ app.on('window-all-closed', () => {
 ipcMain.handle('connect', async (_event, token: string, isBot?: boolean) => {
   try {
     await connect(token, !!isBot);
+    if (isBot) {
+      startBot(token).catch((err: Error) => {
+        console.error('Bot failed:', err.message);
+      });
+    }
     saveConfig({ token: isBot ? `BOT:${token}` : token, botToken: isBot ? token : undefined });
     return { success: true };
   } catch (e: any) {
@@ -77,6 +82,7 @@ ipcMain.handle('connect', async (_event, token: string, isBot?: boolean) => {
 });
 
 ipcMain.handle('disconnect', async () => {
+  await stopBot();
   await disconnect();
   saveConfig({});
   return { success: true };
@@ -438,7 +444,8 @@ ipcMain.handle('set-bot-settings', async (_event, guildId: string, settings: any
   if (!config.botSettings[guildId].autoRole) delete config.botSettings[guildId].autoRole;
   if (Object.keys(config.botSettings[guildId]).length === 0) delete config.botSettings[guildId];
     saveConfig({ botSettings: config.botSettings });
-  return { success: true };
+    if (botRunning()) updateAutoRoles(config.botSettings);
+    return { success: true };
 });
 
 ipcMain.handle('get-all-bot-settings', async () => {
