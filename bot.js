@@ -1,4 +1,4 @@
-﻿const { Client, GatewayIntentBits, ActivityType, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } = require('discord.js');
+﻿const { Client, GatewayIntentBits, ActivityType, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
@@ -264,12 +264,22 @@ client.on('interactionCreate', async (interaction) => {
   if (!interaction.customId.startsWith('ticket_')) return;
   const type = interaction.customId.slice(7);
   const typeNames = { support: 'Support', donat: 'Donat', ideas: 'Ideas', complaint: 'Complaint' };
+
+  // Ideas opens a modal
+  if (type === 'ideas') {
+    const modal = new ModalBuilder().setCustomId('idea_modal').setTitle('💡 Idea');
+    const input = new TextInputBuilder().setCustomId('idea_text').setLabel('Your idea').setStyle(TextInputStyle.Paragraph).setRequired(true).setMaxLength(1000);
+    modal.addComponents(new ActionRowBuilder().addComponents(input));
+    await interaction.showModal(modal);
+    return;
+  }
+
   const msgs = {
-    support: '🛠️ Опишите вашу проблему, ожидайте ответа персонала.',
-    donat: '🏆 Отправьте скрин подтверждения доната для получения роли.',
-    ideas: '💡 Опишите вашу идею для сервера!',
-    complaint: '👮 Опишите ситуацию и прикрепите доказательства.'
+    support: 'Support ticket from ' + interaction.user.username + '\nWrite your question here.\nAuthor: @' + interaction.user.username + '\nID: ' + interaction.user.id,
+    donat: 'To get your role, send:\n1) Your nickname\n2) Your privilege\n3) Screenshot proof',
+    complaint: 'Report form:\n1. Offender [Mention/ID/Tag]\n2. What rule was broken?\n3. Evidence [Screenshot/Link]'
   };
+
   await interaction.reply({ content: '⏳ Creating ticket...', ephemeral: true });
   try {
     const thread = await interaction.channel.threads.create({ name: typeNames[type] + ' - ' + interaction.user.username, type: ChannelType.PrivateThread });
@@ -279,7 +289,32 @@ client.on('interactionCreate', async (interaction) => {
     await interaction.editReply({ content: '✅ Ticket: ' + thread.toString() });
     console.log('[TICKET] ' + type + ' by ' + interaction.user.tag);
   } catch (e) { await interaction.editReply({ content: '❌ ' + e.message }); }
-});client.login(token).catch(e => {
+});
+// Modal submit handler for ideas
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isModalSubmit()) return;
+  if (interaction.customId !== 'idea_modal') return;
+
+  const idea = interaction.fields.getTextInputValue('idea_text');
+  await interaction.reply({ content: '✅ Идея отправлена на рассмотрение!', ephemeral: true });
+
+  try {
+    // Find admin channel or create thread
+    const adminChan = interaction.guild.channels.cache.find(c => c.name.toLowerCase().includes('admin') || c.name.toLowerCase().includes('staff'));
+    const target = adminChan || interaction.channel;
+    const thread = await target.threads.create({
+      name: '💡 Идея от ' + interaction.user.username,
+      type: ChannelType.PrivateThread,
+    });
+    await thread.members.add(interaction.user.id);
+    await thread.send('**💡 Новая идея от ' + interaction.user.username + '**\n' + idea);
+    console.log('[IDEA] from ' + interaction.user.tag);
+  } catch (e) {
+    console.log('[IDEA ERROR]', e.message);
+  }
+});
+
+client.login(token).catch(e => {
   console.log('[BOT] Login failed:', e.message);
   process.exit(1);
 });
