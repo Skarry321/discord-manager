@@ -223,9 +223,25 @@ body {
 .badge-owner { font-size: 14px; flex-shrink: 0; }
 .badge-admin { font-size: 13px; flex-shrink: 0; }
 
+.bot-status {
+  font-size: 11px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
 .sidebar-footer {
   padding: 10px 14px;
   border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-invite {
+  width: 100%;
+  justify-content: center;
+  font-size: 12px;
+  text-decoration: none;
 }
 
 .sidebar-logout {

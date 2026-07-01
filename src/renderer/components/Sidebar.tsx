@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 const GLYPHS = ['🌍', '🎮', '🖥', '📷', '🎵', '📚', '🏀', '🔮', '🎨', '🚀'];
+const BOT_INVITE = 'https://discord.com/oauth2/authorize?client_id=1521850566316392520&permissions=8&integration_type=0&scope=bot';
 
 function guildGlyph(id: string): string {
   let hash = 0;
@@ -14,10 +15,17 @@ export default function Sidebar() {
   const [search, setSearch] = useState('');
   const [showAdminOnly, setShowAdminOnly] = useState(true);
   const [pinned, setPinned] = useState<string[]>([]);
+  const [botGuilds, setBotGuilds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     window.api.getPinned().then(r => setPinned(r.pinned));
   }, []);
+
+  useEffect(() => {
+    if (guilds.length > 0) {
+      setBotGuilds(new Set(guilds.map(g => g.id)));
+    }
+  }, [guilds]);
 
   const togglePin = useCallback(async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -63,6 +71,7 @@ export default function Sidebar() {
         {sortedGuilds.map(guild => {
           const isAdmin = guild.owner || (BigInt(guild.permissions) & 8n) === 8n;
           const isPinned = pinned.includes(guild.id);
+          const hasBot = botGuilds.has(guild.id);
           return (
             <div
               key={guild.id}
@@ -77,6 +86,9 @@ export default function Sidebar() {
                   <span className="guild-name">{guild.name}</span>
                   {guild.owner && <span className="badge-owner">👑</span>}
                   {isAdmin && !guild.owner && <span className="badge-admin">🔑</span>}
+                  <span className={`bot-status ${hasBot ? 'installed' : ''}`} title={hasBot ? 'Бот установлен' : 'Бота нет'}>
+                    {hasBot ? '✅' : '❌'}
+                  </span>
                 </div>
                 <div className="guild-meta">
                   <span>👥 {guild.memberCount > 0 ? guild.memberCount : '--'}</span>
@@ -91,6 +103,9 @@ export default function Sidebar() {
       </div>
 
       <div className="sidebar-footer">
+        <a href={BOT_INVITE} target="_blank" className="btn btn-primary btn-sm sidebar-invite" onClick={e => e.stopPropagation()}>
+          ➕ Добавить бота на сервер
+        </a>
         <button className="btn btn-secondary btn-sm sidebar-logout" onClick={logout}>🔌 Выйти</button>
       </div>
     </div>
