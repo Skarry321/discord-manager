@@ -252,12 +252,11 @@ client.on('interactionCreate', async (interaction) => {
 
   if (interaction.customId.startsWith('close_')) {
     if (!interaction.member?.permissions.has('Administrator') && !interaction.member?.permissions.has('ManageThreads')) {
-      return interaction.reply({ content: '❌ Only admins can close tickets', ephemeral: true });
+      return interaction.reply({ content: '\u274C Only admins can close tickets', ephemeral: true });
     }
-    const thread = interaction.channel;
-    await interaction.reply({ content: '🔒 Closing ticket...', ephemeral: true });
-    await thread.send('🔒 Ticket closed by ' + interaction.user.username);
-    await thread.setArchived(true);
+    await interaction.reply({ content: '\uD83D\uDD12 Closing ticket...', ephemeral: true });
+    await interaction.channel.send('\uD83D\uDD12 Ticket closed by ' + interaction.user.username);
+    await interaction.channel.setArchived(true);
     return;
   }
 
@@ -267,37 +266,40 @@ client.on('interactionCreate', async (interaction) => {
 
   // Ideas opens a modal
   if (type === 'ideas') {
-    const modal = new ModalBuilder().setCustomId('idea_modal').setTitle('💡 Idea');
+    const modal = new ModalBuilder().setCustomId('idea_modal').setTitle('\uD83D\uDCA1 Idea');
     const input = new TextInputBuilder().setCustomId('idea_text').setLabel('Your idea').setStyle(TextInputStyle.Paragraph).setRequired(true).setMaxLength(1000);
     modal.addComponents(new ActionRowBuilder().addComponents(input));
     await interaction.showModal(modal);
     return;
   }
 
-  const msgs = { support: '', donat: '', complaint: '' };
+  // Support / Donat / Complaint - create ticket thread
+  await interaction.reply({ content: '\u23F3 Creating ticket...', ephemeral: true });
 
-  if (type !== 'ideas') {
-    const desc = type === 'support'
-      ? '**Обращение от ' + interaction.user.username + '**\nНапишите свой вопрос в данном канале\n\n**Автор:** @' + interaction.user.username + '\n**ID:** ' + interaction.user.id
-      : type === 'donat'
-      ? '**Для получения роли, соответствующей вашей привилегии, оставьте заявку по форме:**\n\n1️⃣ **Ваш ник на сервере.**\n2️⃣ **Ваша привилегия на сервере.**\n3️⃣ **Приложите скриншот из игры**, на котором в боковой панели видно вашу привилегию.'
-      : '**Форма подачи жалобы на нарушение в Discord**\n\n1️⃣ **Нарушитель** [Упоминание/ID/Тег]\n2️⃣ **Что нарушил?**\n3️⃣ **Доказательства нарушения** [Скриншот/Ссылка]';
-    const embed = { color: 0xFF8800, description: desc, footer: { text: interaction.guild?.name || 'Discord' } };
-    if (interaction.user.avatarURL()) embed.author = { name: interaction.user.username, icon_url: interaction.user.avatarURL() };
-    await thread.send({ embeds: [embed], components: [closeBtn] });
-  }
-
-  await interaction.reply({ content: '⏳ Creating ticket...', ephemeral: true });
   try {
     const thread = await interaction.channel.threads.create({ name: typeNames[type] + ' - ' + interaction.user.username, type: ChannelType.PrivateThread });
     await thread.members.add(interaction.user.id);
-    const closeBtn = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('close_' + thread.id).setLabel('🔒 Close ticket').setStyle(ButtonStyle.Danger));
-    await thread.send({ content: msgs[type] || 'Ticket created!', components: [closeBtn] });
-    await interaction.editReply({ content: '✅ Ticket: ' + thread.toString() });
+
+    const closeBtn = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('close_' + thread.id).setLabel('\uD83D\uDD12 Close ticket').setStyle(ButtonStyle.Danger)
+    );
+
+    const desc = type === 'support'
+      ? '**\u041E\u0431\u0440\u0430\u0449\u0435\u043D\u0438\u0435 \u043E\u0442 ' + interaction.user.username + '**\n\u041D\u0430\u043F\u0438\u0448\u0438\u0442\u0435 \u0441\u0432\u043E\u0439 \u0432\u043E\u043F\u0440\u043E\u0441 \u0432 \u0434\u0430\u043D\u043D\u043E\u043C \u043A\u0430\u043D\u0430\u043B\u0435\n\n**\u0410\u0432\u0442\u043E\u0440:** @' + interaction.user.username + '\n**ID:** ' + interaction.user.id
+      : type === 'donat'
+      ? '**\u0414\u043B\u044F \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u044F \u0440\u043E\u043B\u0438, \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0443\u044E\u0449\u0435\u0439 \u0432\u0430\u0448\u0435\u0439 \u043F\u0440\u0438\u0432\u0438\u043B\u0435\u0433\u0438\u0438, \u043E\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u0437\u0430\u044F\u0432\u043A\u0443 \u043F\u043E \u0444\u043E\u0440\u043C\u0435:**\n\n1\uFE0F\u20E3 **\u0412\u0430\u0448 \u043D\u0438\u043A \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u0435.**\n2\uFE0F\u20E3 **\u0412\u0430\u0448\u0430 \u043F\u0440\u0438\u0432\u0438\u043B\u0435\u0433\u0438\u044F \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u0435.**\n3\uFE0F\u20E3 **\u041F\u0440\u0438\u043B\u043E\u0436\u0438\u0442\u0435 \u0441\u043A\u0440\u0438\u043D\u0448\u043E\u0442**'
+      : '**\u0424\u043E\u0440\u043C\u0430 \u043F\u043E\u0434\u0430\u0447\u0438 \u0436\u0430\u043B\u043E\u0431\u044B**\n\n1\uFE0F\u20E3 **\u041D\u0430\u0440\u0443\u0448\u0438\u0442\u0435\u043B\u044C** [\u0423\u043F\u043E\u043C\u0438\u043D\u0430\u043D\u0438\u0435/ID/\u0422\u0435\u0433]\n2\uFE0F\u20E3 **\u0427\u0442\u043E \u043D\u0430\u0440\u0443\u0448\u0438\u043B?**\n3\uFE0F\u20E3 **\u0414\u043E\u043A\u0430\u0437\u0430\u0442\u0435\u043B\u044C\u0441\u0442\u0432\u0430** [\u0421\u043A\u0440\u0438\u043D\u0448\u043E\u0442/\u0421\u0441\u044B\u043B\u043A\u0430]';
+
+    const embed = { color: 0xFF8800, description: desc, footer: { text: interaction.guild?.name || 'Discord' } };
+    if (interaction.user.avatarURL()) embed.author = { name: interaction.user.username, icon_url: interaction.user.avatarURL() };
+    await thread.send({ embeds: [embed], components: [closeBtn] });
+
+    await interaction.editReply({ content: '\u2705 Ticket: ' + thread.toString() });
     console.log('[TICKET] ' + type + ' by ' + interaction.user.tag);
-  } catch (e) { await interaction.editReply({ content: '❌ ' + e.message }); }
-});
-// Modal submit handler for ideas
+  } catch (e) {
+    await interaction.editReply({ content: '\u274C ' + e.message });
+  }
+});// Modal submit handler for ideas
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isModalSubmit()) return;
   if (interaction.customId !== 'idea_modal') return;
