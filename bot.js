@@ -209,15 +209,7 @@ client.on('messageCreate', async (message) => {
     }
   }
 
-  if (cmd === 'tsetup' || cmd === 'ticketsetup') {
-    if (!message.member?.permissions.has('Administrator')) return;
-    const gs = message.guild.channels.cache.filter(c => c.type === 0 || c.type === 5);
-    const kw = { support: ['support', 'поддержк'], donat: ['donat', 'донат', 'привиле'], ideas: ['idea', 'иде'], complaint: ['complaint', 'жалоб', 'репорт'] };
-    const lb = { support: '🛠️ Поддержка', donat: '🏆 Донат-роли', ideas: '💡 Идеи', complaint: '👮 Жалобы' };
-    let cnt = 0;
-    for (const [t, words] of Object.entries(kw)) {
-      const ch = gs.find(c => words.some(w => c.name.toLowerCase().includes(w)));
-      if (ch) { await ch.send({ components: [new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('ticket_' + t).setLabel(lb[t]).setStyle(ButtonStyle.Primary))] }); cnt++; }
+  if (cmd === 'tsetup' || cmd === 'ticketsetup') {\n    if (!message.member?.permissions.has('Administrator')) return;\n    const gs = message.guild.channels.cache.filter(c => c.type === 0 || c.type === 5);\n    const kw = { support: ['support'], donat: ['donat'], ideas: ['idea'], complaint: ['complaint'] };\n    const texts = {\n      support: 'Приветствуем Вас в канале поддержки!\\nЧтобы задать вопрос, нажмите на кнопку ниже.\\n\\nВАЖНО: действуют правила сервера.',\n      donat: 'Как получить роль по вашей привилегии?\\n1. Нажмите на кнопку ниже.\\n2. Следуйте указаниям бота.',\n      ideas: 'Отправьте идею для Гриферского режима или для Discord сервера.',\n      complaint: 'Жалобы на нарушения на Discord сервере\\nНажмите кнопку чтобы подать жалобу.\\n\\nМы не принимаем жалобы на нарушения в Minecraft!'\n    };\n    const btns = { support: 'Создать тикет', donat: 'Получить роль', ideas: 'Отправить идею', complaint: 'Подать жалобу' };\n    let cnt = 0;\n    for (const [t, words] of Object.entries(kw)) {\n      const ch = gs.find(c => words.some(w => c.name.toLowerCase().includes(w)));\n      if (ch) {\n        const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('ticket_' + t).setLabel(btns[t]).setStyle(ButtonStyle.Primary));\n        await ch.send({ content: texts[t], components: [row] });\n        cnt++;\n      }\n    }\n    message.reply('Настроено ' + cnt + ' тикет-панелей');\n    return;\n  }\n});\n cnt++; }
     }
     message.reply('✅ Настроено ' + cnt + ' тикет-панелей');
     return;
