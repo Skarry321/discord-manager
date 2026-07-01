@@ -100,6 +100,10 @@ declare global {
       getAllBotStats: () => Promise<{ success: boolean; data?: Record<string, any>; error?: string }>;
       isBotRunning: () => Promise<{ running: boolean }>;
       getBotLogs: () => Promise<{ logs: Array<{ time: string; type: string; msg: string }> }>;
+      getBotSettings: (guildId: string) => Promise<{ settings: { autoRole?: string; welcomeChannel?: string; welcomeMessage?: string; welcomeType?: string; welcomeImage?: string; embedColor?: string; embedTitle?: string; embedFooter?: string } }>;
+      setBotSettings: (guildId: string, settings: any) => Promise<{ success: boolean }>;
+      uploadWelcomeImage: () => Promise<{ success: boolean; data?: string; fileName?: string; error?: string }>;
+      sendTestWelcome: (guildId: string, channelId: string, settings: any) => Promise<{ success: boolean; error?: string }>;
 
       getGuilds: () => Promise<{ success: boolean; data?: DiscordGuild[]; error?: string }>;
       getGuild: (id: string) => Promise<{ success: boolean; data?: DiscordGuildFull; error?: string }>;
@@ -154,4 +158,4 @@ export function channelIcon(type: number): string {
   return icons[type] || '\u0023';
 }
 
-export type ViewType = 'dashboard' | 'channels' | 'roles' | 'members' | 'settings' | 'bans';
+export type ViewType = 'dashboard' | 'channels' | 'roles' | 'members' | 'settings' | 'bans' | 'bot';

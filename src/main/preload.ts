@@ -41,6 +41,10 @@ const api = {
   getAllBotStats: () => ipcRenderer.invoke('get-all-bot-stats'),
   isBotRunning: () => ipcRenderer.invoke('is-bot-running'),
   getBotLogs: () => ipcRenderer.invoke('get-bot-logs'),
+  getBotSettings: (guildId: string) => ipcRenderer.invoke('get-bot-settings', guildId),
+  setBotSettings: (guildId: string, settings: any) => ipcRenderer.invoke('set-bot-settings', guildId, settings),
+  uploadWelcomeImage: () => ipcRenderer.invoke('upload-welcome-image'),
+  sendTestWelcome: (guildId: string, channelId: string, settings: any) => ipcRenderer.invoke('send-test-welcome', guildId, channelId, settings),
 
   onMemberCounts: (callback: (data: Record<string, number>) => void) => {
     const handler = (_event: any, data: Record<string, number>) => callback(data);

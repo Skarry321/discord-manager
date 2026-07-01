@@ -7,6 +7,7 @@ import ChannelManager from './components/ChannelManager';
 import RoleManager from './components/RoleManager';
 import MemberManager from './components/MemberManager';
 import ServerSettings from './components/ServerSettings';
+import BotSettings from './components/BotSettings';
 import { ViewType } from './types';
 
 
@@ -47,6 +48,7 @@ function AppContent() {
               <button className={`view-tab ${view === 'roles' ? 'active' : ''}`} onClick={() => setView('roles')}>Roles</button>
               <button className={`view-tab ${view === 'members' ? 'active' : ''}`} onClick={() => setView('members')}>Members</button>
               <button className={`view-tab ${view === 'settings' ? 'active' : ''}`} onClick={() => setView('settings')}>Settings</button>
+              <button className={`view-tab ${view === 'bot' ? 'active' : ''}`} onClick={() => setView('bot')}>🤖 Bot</button>
             </div>
             <div className="view-content">
               {view === 'dashboard' && <Dashboard />}
@@ -54,6 +56,7 @@ function AppContent() {
               {view === 'roles' && <RoleManager />}
               {view === 'members' && <MemberManager />}
               {view === 'settings' && <ServerSettings />}
+              {view === 'bot' && <BotSettings />}
             </div>
           </>
         )}

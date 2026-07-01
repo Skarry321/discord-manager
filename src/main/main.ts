@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import {
@@ -10,7 +10,7 @@ import {
   editGuild, getGuild, isConnected, fillMemberCounts,
   ALL_PERMISSIONS,
 } from './discordService';
-import { startBot, stopBot, getGuildStats, getAllStats, getBotGuilds, isRunning as botRunning, getLogs } from './botClient';
+import { startBot, stopBot, getGuildStats, getAllStats, getBotGuilds, isRunning as botRunning, getLogs, updateAutoRoles } from './botClient';
 
 let mainWindow: BrowserWindow | null = null;
 const configPath = path.join(app.getPath('userData'), 'config.json');
@@ -19,6 +19,7 @@ interface AppConfig {
   token?: string;
   botToken?: string;
   pinnedServers?: string[];
+  botSettings?: Record<string, { autoRole?: string }>;
 }
 
 function loadConfig(): AppConfig {
@@ -68,11 +69,6 @@ app.on('window-all-closed', () => {
 ipcMain.handle('connect', async (_event, token: string, isBot?: boolean) => {
   try {
     await connect(token, !!isBot);
-    if (isBot) {
-      startBot(token).catch((err: Error) => {
-        console.error('Bot failed:', err.message);
-      });
-    }
     saveConfig({ token: isBot ? `BOT:${token}` : token, botToken: isBot ? token : undefined });
     return { success: true };
   } catch (e: any) {
@@ -81,7 +77,6 @@ ipcMain.handle('connect', async (_event, token: string, isBot?: boolean) => {
 });
 
 ipcMain.handle('disconnect', async () => {
-  await stopBot();
   await disconnect();
   saveConfig({});
   return { success: true };
@@ -122,14 +117,20 @@ ipcMain.handle('get-status', async () => {
 ipcMain.handle('get-guilds', async () => {
   try {
     const guilds = await getGuilds();
-    if (mainWindow) {
+    if (botRunning()) {
+      const allStats = getAllStats();
+      for (const g of guilds) {
+        const s = allStats[g.id];
+        if (s && s.memberCount > 0) g.memberCount = s.memberCount;
+      }
+    } else if (mainWindow) {
       const needCounts = guilds.filter(g => g.memberCount === 0);
       if (needCounts.length > 0) {
         fillMemberCounts(needCounts).then(map => {
           if (!mainWindow) return;
           const updates: Record<string, number> = {};
-          for (const [id, count] of map) updates[id] = count;
-          mainWindow.webContents.send('member-counts', updates);
+          for (const [id, count] of map) if (count > 0) updates[id] = count;
+          if (Object.keys(updates).length > 0) mainWindow.webContents.send('member-counts', updates);
         }).catch(() => {});
       }
     }
@@ -423,4 +424,63 @@ ipcMain.handle('is-bot-running', async () => {
 
 ipcMain.handle('get-bot-logs', async () => {
   return { logs: getLogs() };
+});
+
+ipcMain.handle('get-bot-settings', async (_event, guildId: string) => {
+  const config = loadConfig();
+  return { settings: config.botSettings?.[guildId] || {} };
+});
+
+ipcMain.handle('set-bot-settings', async (_event, guildId: string, settings: any) => {
+  const config = loadConfig();
+  if (!config.botSettings) config.botSettings = {};
+  config.botSettings[guildId] = { ...(config.botSettings[guildId] || {}), ...settings };
+  if (!config.botSettings[guildId].autoRole) delete config.botSettings[guildId].autoRole;
+  if (Object.keys(config.botSettings[guildId]).length === 0) delete config.botSettings[guildId];
+    saveConfig({ botSettings: config.botSettings });
+  return { success: true };
+});
+
+ipcMain.handle('get-all-bot-settings', async () => {
+  const config = loadConfig();
+  return { settings: config.botSettings || {} };
+});
+
+ipcMain.handle('upload-welcome-image', async () => {
+  if (!mainWindow) return { success: false, error: 'No window' };
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }],
+  });
+  if (result.canceled || result.filePaths.length === 0) return { success: false, error: 'Cancelled' };
+  try {
+    const filePath = result.filePaths[0];
+    const ext = path.extname(filePath).slice(1);
+    const buffer = fs.readFileSync(filePath);
+    const base64 = buffer.toString('base64');
+    const mime = ext === 'jpg' ? 'jpeg' : ext;
+    return { success: true, data: `data:image/${mime};base64,${base64}`, fileName: path.basename(filePath) };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('send-test-welcome', async (_event, guildId: string, channelId: string, settings: any) => {
+  try {
+    const { sendTestWelcome } = await import('./botClient');
+    const result = await sendTestWelcome(guildId, channelId, settings);
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('select-file', async () => {
+  if (!mainWindow) return { filePath: null };
+  const { dialog } = require('electron');
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    filters: [{ name: 'Images & GIFs', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'] }],
+  });
+  return { filePath: result.canceled ? null : result.filePaths[0] };
 });

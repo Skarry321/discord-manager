@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node build.js",
     "start": "npm run build && electron .",
-    "dev": "npm run build && electron ."
+    "dev": "npm run build && electron .",
+    "bot": "node bot.js"
   },
   "dependencies": {
     "discord.js": "^14.26.4",
