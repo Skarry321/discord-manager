@@ -212,7 +212,7 @@ client.on('messageCreate', async (message) => {
     if (cmd === 'tsetup' || cmd === 'ticketsetup') {
     if (!message.member?.permissions.has('Administrator')) return;
     const gs = message.guild.channels.cache.filter(c => c.type === 0 || c.type === 5);
-    const kw = { support: ['support'], donat: ['donat'], ideas: ['idea'], complaint: ['complaint'] };
+    const kw = { support: ['support', 'поддержк', 'помощ'], donat: ['donat', 'донат', 'привиле'], ideas: ['idea', 'иде', 'предлож'], complaint: ['complaint', 'жалоб', 'репорт'] };
     const texts = {
       support: 'Приветствуем Вас в канале поддержки Discord сервера!\nЧтобы задать свой вопрос, нажмите на кнопку под данным сообщением!\n\n:ironingot: - Отправлено за всё время: 22932\n:netheriteingot: - Закрыто обращений: 22942\n:gold: - Тикетов на рассмотрении: 8\n\nВАЖНАЯ ИНФОРМАЦИЯ:\n- В данном канале действуют все правила, прописанные в правилах сервера',
       donat: 'Как получить роль, соответствующую вашей привилегии?\n1. Нажмите на кнопку под данным сообщением.\n2. Следуйте указаниям бота в новом созданном канале.\n\n@IMMORTAL\n@CRUSADER\n@DESTROYER\n@PALADIN\n@ELITE\n@GUARDIAN\n@LORD',
