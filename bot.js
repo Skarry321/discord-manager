@@ -274,11 +274,18 @@ client.on('interactionCreate', async (interaction) => {
     return;
   }
 
-  const msgs = {
-    support: 'Support ticket from ' + interaction.user.username + '\nWrite your question here.\nAuthor: @' + interaction.user.username + '\nID: ' + interaction.user.id,
-    donat: 'To get your role, send:\n1) Your nickname\n2) Your privilege\n3) Screenshot proof',
-    complaint: 'Report form:\n1. Offender [Mention/ID/Tag]\n2. What rule was broken?\n3. Evidence [Screenshot/Link]'
-  };
+  const msgs = { support: '', donat: '', complaint: '' };
+
+  if (type !== 'ideas') {
+    const desc = type === 'support'
+      ? '**Обращение от ' + interaction.user.username + '**\nНапишите свой вопрос в данном канале\n\n**Автор:** @' + interaction.user.username + '\n**ID:** ' + interaction.user.id
+      : type === 'donat'
+      ? '**Для получения роли, соответствующей вашей привилегии, оставьте заявку по форме:**\n\n1️⃣ **Ваш ник на сервере.**\n2️⃣ **Ваша привилегия на сервере.**\n3️⃣ **Приложите скриншот из игры**, на котором в боковой панели видно вашу привилегию.'
+      : '**Форма подачи жалобы на нарушение в Discord**\n\n1️⃣ **Нарушитель** [Упоминание/ID/Тег]\n2️⃣ **Что нарушил?**\n3️⃣ **Доказательства нарушения** [Скриншот/Ссылка]';
+    const embed = { color: 0xFF8800, description: desc, footer: { text: interaction.guild?.name || 'Discord' } };
+    if (interaction.user.avatarURL()) embed.author = { name: interaction.user.username, icon_url: interaction.user.avatarURL() };
+    await thread.send({ embeds: [embed], components: [closeBtn] });
+  }
 
   await interaction.reply({ content: '⏳ Creating ticket...', ephemeral: true });
   try {
@@ -307,7 +314,8 @@ client.on('interactionCreate', async (interaction) => {
       type: ChannelType.PrivateThread,
     });
     await thread.members.add(interaction.user.id);
-    await thread.send('**💡 Новая идея от ' + interaction.user.username + '**\n' + idea);
+    const embed = { color: 0xFF8800, description: '**💡 Новая идея от ' + interaction.user.username + '**\n\n' + idea, footer: { text: interaction.guild?.name || 'Discord' } };
+    await thread.send({ embeds: [embed] });
     console.log('[IDEA] from ' + interaction.user.tag);
   } catch (e) {
     console.log('[IDEA ERROR]', e.message);
