@@ -228,28 +228,37 @@ client.on('messageCreate', async (message) => {
 // Ticket button handler
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isButton()) return;
-  if (!interaction.customId.startsWith('ticket_')) return;
 
-  const type = interaction.customId.slice(7);
-  const typeNames = { support: 'Поддержка', donat: 'Донат-роли', ideas: 'Идеи', complaint: 'Жалоба' };
-
-  await interaction.reply({ content: '⏳ Создаю тикет...', ephemeral: true });
-
-  try {
-    const thread = await interaction.channel.threads.create({
-      name: typeNames[type] + ' — ' + interaction.user.username,
-      type: ChannelType.PrivateThread,
-    });
-
-    await thread.members.add(interaction.user.id);
-    await thread.send({ content: '✅ Тикет создан! Ожидайте ответа от персонала.' });
-    await interaction.editReply({ content: '✅ Тикет: ' + thread.toString() });
-    console.log('[TICKET] ' + type + ' by ' + interaction.user.tag);
-  } catch (e) {
-    await interaction.editReply({ content: '❌ ' + e.message });
+  if (interaction.customId.startsWith('close_')) {
+    if (!interaction.member?.permissions.has('Administrator') && !interaction.member?.permissions.has('ManageThreads')) {
+      return interaction.reply({ content: '❌ Only admins can close tickets', ephemeral: true });
+    }
+    const thread = interaction.channel;
+    await interaction.reply({ content: '🔒 Closing ticket...', ephemeral: true });
+    await thread.send('🔒 Ticket closed by ' + interaction.user.username);
+    await thread.setArchived(true);
+    return;
   }
-});
-client.login(token).catch(e => {
+
+  if (!interaction.customId.startsWith('ticket_')) return;
+  const type = interaction.customId.slice(7);
+  const typeNames = { support: 'Support', donat: 'Donat', ideas: 'Ideas', complaint: 'Complaint' };
+  const msgs = {
+    support: '\\uD83D\\uDEE0\\uFE0F Welcome! Describe your issue and wait for staff.',
+    donat: '\\uD83C\\uDFC6 Donation verification. Send your proof of donation.',
+    ideas: '\\uD83D\\uDCA1 Share your idea for the server!',
+    complaint: '\\uD83D\\uDC6E File a complaint. Describe with evidence.'
+  };
+  await interaction.reply({ content: '⏳ Creating ticket...', ephemeral: true });
+  try {
+    const thread = await interaction.channel.threads.create({ name: typeNames[type] + ' - ' + interaction.user.username, type: ChannelType.PrivateThread });
+    await thread.members.add(interaction.user.id);
+    const closeBtn = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('close_' + thread.id).setLabel('🔒 Close ticket').setStyle(ButtonStyle.Danger));
+    await thread.send({ content: msgs[type] || 'Ticket created!', components: [closeBtn] });
+    await interaction.editReply({ content: '✅ Ticket: ' + thread.toString() });
+    console.log('[TICKET] ' + type + ' by ' + interaction.user.tag);
+  } catch (e) { await interaction.editReply({ content: '❌ ' + e.message }); }
+});client.login(token).catch(e => {
   console.log('[BOT] Login failed:', e.message);
   process.exit(1);
 });
