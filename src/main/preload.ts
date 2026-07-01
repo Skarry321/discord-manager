@@ -37,6 +37,9 @@ const api = {
 
   editGuild: (guildId: string, data: any) => ipcRenderer.invoke('edit-guild', guildId, data),
   getPermissionsList: () => ipcRenderer.invoke('get-permissions-list'),
+  getBotStats: (guildId: string) => ipcRenderer.invoke('get-bot-stats', guildId),
+  getAllBotStats: () => ipcRenderer.invoke('get-all-bot-stats'),
+  isBotRunning: () => ipcRenderer.invoke('is-bot-running'),
 
   onMemberCounts: (callback: (data: Record<string, number>) => void) => {
     const handler = (_event: any, data: Record<string, number>) => callback(data);

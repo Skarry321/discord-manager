@@ -13,6 +13,8 @@ export default function Dashboard() {
   const [members, setMembers] = useState<DiscordMember[]>([]);
   const [roles, setRoles] = useState<DiscordRole[]>([]);
   const [notifications, setNotifications] = useState<Array<{ text: string; time: string; type: string }>>([]);
+  const [botStats, setBotStats] = useState<any>(null);
+  const [botRunning, setBotRunning] = useState(false);
 
   useEffect(() => {
     if (!selectedGuild) return;
@@ -22,7 +24,12 @@ export default function Dashboard() {
       window.api.getMembers(selectedGuild.id).then(r => r.success && r.data && setMembers(r.data)),
       window.api.getRoles(selectedGuild.id).then(r => r.success && r.data && setRoles(r.data)),
     ]);
-
+    window.api.isBotRunning().then(r => {
+      setBotRunning(r.running);
+      if (r.running) {
+        window.api.getBotStats(selectedGuild.id).then(s => s.success && s.data && setBotStats(s.data));
+      }
+    });
     const n: Array<{ text: string; time: string; type: string }> = [];
     const now = new Date();
     n.push({ text: `${selectedGuild.name} загружен`, time: now.toLocaleTimeString(), type: 'info' });
@@ -41,7 +48,8 @@ export default function Dashboard() {
   const voiceChannels = channels.filter(c => c.type === 2);
   const adminCount = members.filter(m => m.roles.some(r => r.name === 'Admin' || r.name === 'Administrator')).length;
   const botCount = members.filter(m => m.user.bot).length;
-  const onlineNow = Math.round(members.length * 0.35);
+  const onlineNow = botStats ? botStats.onlineCount : Math.round(members.length * 0.35);
+  const voiceOnline = botStats ? botStats.voiceCount : 0;
 
   const sortedMembers = [...members].sort((a, b) => b.roles.length - a.roles.length).slice(0, 5);
   const popularChannels = [...textChannels].sort((a, b) => (a.position || 0) - (b.position || 0)).slice(0, 5);
@@ -60,7 +68,11 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="dash-header-right">
-          <div className="dash-status"><span className="status-dot green" /> Онлайн ≈{onlineNow}</div>
+          <div className="dash-status">
+            {botRunning ? <><span className="status-dot green" /> Бот онлайн</> : <><span className="status-dot yellow" /> REST режим</>}
+            {onlineNow > 0 && <span style={{ marginLeft: 12 }}>🟢 {onlineNow} онлайн</span>}
+            {voiceOnline > 0 && <span>🔊 {voiceOnline} в голосе</span>}
+          </div>
         </div>
       </div>
 
@@ -79,8 +91,17 @@ export default function Dashboard() {
         <div className="stat-card"><span className="stat-icon">💬</span><div><span className="stat-value">{textChannels.length}</span><span className="stat-label">Текстовых</span></div></div>
         <div className="stat-card"><span className="stat-icon">🔊</span><div><span className="stat-value">{voiceChannels.length}</span><span className="stat-label">Голосовых</span></div></div>
         <div className="stat-card"><span className="stat-icon">🛡️</span><div><span className="stat-value">{roles.length}</span><span className="stat-label">Ролей</span></div></div>
-        <div className="stat-card"><span className="stat-icon">🤖</span><div><span className="stat-value">{botCount}</span><span className="stat-label">Ботов</span></div></div>
+        <div className="stat-card"><span className="stat-icon">🤖</span><div><span className="stat-value">{botStats ? botStats.botCount : botCount}</span><span className="stat-label">Ботов</span></div></div>
         <div className="stat-card"><span className="stat-icon">👑</span><div><span className="stat-value">{adminCount}</span><span className="stat-label">Админов</span></div></div>
+        {botStats && (
+          <>
+            <div className="stat-card"><span className="stat-icon">🟢</span><div><span className="stat-value">{botStats.onlineCount}</span><span className="stat-label">Онлайн</span></div></div>
+            <div className="stat-card"><span className="stat-icon">🌙</span><div><span className="stat-value">{botStats.idleCount}</span><span className="stat-label">Отошли</span></div></div>
+            <div className="stat-card"><span className="stat-icon">🔴</span><div><span className="stat-value">{botStats.dndCount}</span><span className="stat-label">Не беспокоить</span></div></div>
+            <div className="stat-card"><span className="stat-icon">⚫</span><div><span className="stat-value">{botStats.offlineCount}</span><span className="stat-label">Офлайн</span></div></div>
+            <div className="stat-card"><span className="stat-icon">🔊</span><div><span className="stat-value">{botStats.voiceCount}</span><span className="stat-label">В голосе</span></div></div>
+          </>
+        )}
       </div>
 
       {/* Quick Actions */}

@@ -10,12 +10,14 @@ import {
   editGuild, getGuild, isConnected, fillMemberCounts,
   ALL_PERMISSIONS,
 } from './discordService';
+import { startBot, stopBot, getGuildStats, getAllStats, getBotGuilds, isRunning as botRunning } from './botClient';
 
 let mainWindow: BrowserWindow | null = null;
 const configPath = path.join(app.getPath('userData'), 'config.json');
 
 interface AppConfig {
   token?: string;
+  botToken?: string;
   pinnedServers?: string[];
 }
 
@@ -66,7 +68,10 @@ app.on('window-all-closed', () => {
 ipcMain.handle('connect', async (_event, token: string, isBot?: boolean) => {
   try {
     await connect(token, !!isBot);
-    saveConfig({ token: isBot ? `BOT:${token}` : token });
+    if (isBot) {
+      startBot(token).catch(() => {});
+    }
+    saveConfig({ token: isBot ? `BOT:${token}` : token, botToken: isBot ? token : undefined });
     return { success: true };
   } catch (e: any) {
     return { success: false, error: e.message };
@@ -74,6 +79,7 @@ ipcMain.handle('connect', async (_event, token: string, isBot?: boolean) => {
 });
 
 ipcMain.handle('disconnect', async () => {
+  await stopBot();
   await disconnect();
   saveConfig({});
   return { success: true };
@@ -82,9 +88,9 @@ ipcMain.handle('disconnect', async () => {
 ipcMain.handle('get-saved-token', async () => {
   const config = loadConfig();
   if (config.token && config.token.startsWith('BOT:')) {
-    return { token: config.token.slice(4), isBot: true };
+    return { token: config.token.slice(4), isBot: true, botToken: config.botToken };
   }
-  return { token: config.token || null, isBot: false };
+  return { token: config.token || null, isBot: false, botToken: config.botToken || null };
 });
 
 ipcMain.handle('save-token', async (_event, token: string, isBot?: boolean) => {
@@ -392,4 +398,23 @@ ipcMain.handle('edit-guild', async (_event, guildId: string, data: any) => {
 
 ipcMain.handle('get-permissions-list', async () => {
   return ALL_PERMISSIONS;
+});
+
+ipcMain.handle('get-bot-stats', async (_event, guildId: string) => {
+  if (botRunning()) {
+    const stats = getGuildStats(guildId);
+    return { success: true, data: stats || null };
+  }
+  return { success: false, error: 'Bot not running' };
+});
+
+ipcMain.handle('get-all-bot-stats', async () => {
+  if (botRunning()) {
+    return { success: true, data: getAllStats() };
+  }
+  return { success: false, error: 'Bot not running' };
+});
+
+ipcMain.handle('is-bot-running', async () => {
+  return { running: botRunning() };
 });

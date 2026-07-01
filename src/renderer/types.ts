@@ -90,11 +90,15 @@ declare global {
       disconnect: () => Promise<{ success: boolean }>;
       getStatus: () => Promise<{ connected: boolean }>;
 
-      getSavedToken: () => Promise<{ token: string | null; isBot: boolean }>;
+      getSavedToken: () => Promise<{ token: string | null; isBot: boolean; botToken: string | null }>;
       saveToken: (token: string, isBot?: boolean) => Promise<{ success: boolean }>;
       getPinned: () => Promise<{ pinned: string[] }>;
       togglePin: (serverId: string) => Promise<{ pinned: string[] }>;
       onMemberCounts: (callback: (data: Record<string, number>) => void) => () => void;
+
+      getBotStats: (guildId: string) => Promise<{ success: boolean; data?: any; error?: string }>;
+      getAllBotStats: () => Promise<{ success: boolean; data?: Record<string, any>; error?: string }>;
+      isBotRunning: () => Promise<{ running: boolean }>;
 
       getGuilds: () => Promise<{ success: boolean; data?: DiscordGuild[]; error?: string }>;
       getGuild: (id: string) => Promise<{ success: boolean; data?: DiscordGuildFull; error?: string }>;
