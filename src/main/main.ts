@@ -501,3 +501,17 @@ ipcMain.handle('send-channel-message', async (_event, channelId: string, content
     return { success: false, error: e.message };
   }
 });
+
+ipcMain.handle('http-post', async (_event, url: string, data: any) => {
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    return { success: true, data: result };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+});

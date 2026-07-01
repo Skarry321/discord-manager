@@ -105,6 +105,7 @@ declare global {
       uploadWelcomeImage: () => Promise<{ success: boolean; data?: string; fileName?: string; error?: string }>;
       sendTestWelcome: (guildId: string, channelId: string, settings: any) => Promise<{ success: boolean; error?: string }>;
       sendChannelMessage: (channelId: string, content: string, options?: any) => Promise<{ success: boolean; error?: string }>;
+      httpPost: (url: string, data: any) => Promise<{ success: boolean; data?: any; error?: string }>;
 
       getGuilds: () => Promise<{ success: boolean; data?: DiscordGuild[]; error?: string }>;
       getGuild: (id: string) => Promise<{ success: boolean; data?: DiscordGuildFull; error?: string }>;

@@ -46,6 +46,7 @@ const api = {
   uploadWelcomeImage: () => ipcRenderer.invoke('upload-welcome-image'),
   sendTestWelcome: (guildId: string, channelId: string, settings: any) => ipcRenderer.invoke('send-test-welcome', guildId, channelId, settings),
   sendChannelMessage: (channelId: string, content: string, options?: any) => ipcRenderer.invoke('send-channel-message', channelId, content, options),
+  httpPost: (url: string, data: any) => ipcRenderer.invoke('http-post', url, data),
 
   onMemberCounts: (callback: (data: Record<string, number>) => void) => {
     const handler = (_event: any, data: Record<string, number>) => callback(data);

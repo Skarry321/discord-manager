@@ -53,6 +53,7 @@ export default function BotSettings() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [msgForm, setMsgForm] = useState({ channel: '', text: '', type: 'text', color: '#7c3aed', title: '', footer: '', image: '' });
+  const [botUrl, setBotUrl] = useState('');
 
   useEffect(() => {
     if (!selectedGuild) return;
@@ -67,6 +68,7 @@ export default function BotSettings() {
       if (rSettings.settings) setSettings(rSettings.settings);
       setLoading(false);
     }).catch(() => setLoading(false));
+    window.api.getBotSettings('_url').then(r => { if (r.settings?.serverUrl) setBotUrl(r.settings.serverUrl); }).catch(() => {});
   }, [selectedGuild]);
 
   const update = useCallback(async (key: string, value: any) => {
@@ -79,8 +81,11 @@ export default function BotSettings() {
         else next[key] = value;
         return next;
       });
+      if (botUrl) {
+        window.api.httpPost(botUrl + '/api/config/' + selectedGuild.id, { [key]: value === '' || value === null || value === undefined ? null : value }).catch(() => {});
+      }
     }
-  }, [selectedGuild]);
+  }, [selectedGuild, botUrl]);
 
   const handleUpload = async () => {
     const res = await window.api.uploadWelcomeImage();
@@ -144,6 +149,23 @@ export default function BotSettings() {
       </div>
 
       {message && <div className={`toast ${message.error ? 'error' : 'success'}`}>{message.text}<button onClick={() => setMessage(null)}>✕</button></div>}
+
+      {/* BOT SERVER URL */}
+      <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 16, marginBottom: 16 }}>
+        <div className="form-group" style={{ margin: 0 }}>
+          <label>Сервер бота (Railway URL)</label>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input type="text" value={botUrl} onChange={e => setBotUrl(e.target.value)} placeholder="https://discord-manager.up.railway.app" style={{ flex: 1, fontSize: 12 }} />
+            <button className="btn btn-sm btn-primary" onClick={async () => {
+              await window.api.setBotSettings('_url', { serverUrl: botUrl || null });
+              setMessage({ text: botUrl ? '✅ URL сохранён' : '✅ URL удалён', error: false });
+            }}>Сохранить</button>
+          </div>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+            Укажи URL твоего бота на Railway. Настройки будут отправляться на сервер.
+          </span>
+        </div>
+      </div>
 
       {/* AUTO ROLE */}
       <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 20, marginBottom: 16 }}>
