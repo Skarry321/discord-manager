@@ -1,4 +1,4 @@
-﻿const { Client, GatewayIntentBits, ActivityType, AttachmentBuilder } = require('discord.js');
+﻿const { Client, GatewayIntentBits, ActivityType, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
@@ -210,6 +210,31 @@ client.on('messageCreate', async (message) => {
   }
 });
 
+
+// Ticket button handler
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isButton()) return;
+  if (!interaction.customId.startsWith('ticket_')) return;
+
+  const type = interaction.customId.slice(7);
+  const typeNames = { support: 'Поддержка', donat: 'Донат-роли', ideas: 'Идеи', complaint: 'Жалоба' };
+
+  await interaction.reply({ content: '⏳ Создаю тикет...', ephemeral: true });
+
+  try {
+    const thread = await interaction.channel.threads.create({
+      name: typeNames[type] + ' — ' + interaction.user.username,
+      type: ChannelType.PrivateThread,
+    });
+
+    await thread.members.add(interaction.user.id);
+    await thread.send({ content: '✅ Тикет создан! Ожидайте ответа от персонала.' });
+    await interaction.editReply({ content: '✅ Тикет: ' + thread.toString() });
+    console.log('[TICKET] ' + type + ' by ' + interaction.user.tag);
+  } catch (e) {
+    await interaction.editReply({ content: '❌ ' + e.message });
+  }
+});
 client.login(token).catch(e => {
   console.log('[BOT] Login failed:', e.message);
   process.exit(1);
