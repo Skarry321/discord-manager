@@ -230,9 +230,10 @@ client.on('messageCreate', async (message) => {
           const role = message.guild.roles.cache.find(r => r.name.toLowerCase() === name.toLowerCase());
           return role ? role.toString() : match;
         });
-        // Replace #channelname with actual channel mentions
-        msg = msg.replace(/#(\S+)/g, (match, name) => {
-          const ch = message.guild.channels.cache.find(c => c.name.toLowerCase() === name.toLowerCase());
+        // Replace #channelname with actual channel mentions (partial match)
+        msg = msg.replace(/#([\wа-яА-ЯёЁ\d_-]+)/g, (match, name) => {
+          const clean = name.replace(/[.,!?;:)]+$/, '');
+          const ch = message.guild.channels.cache.find(c => c.name.toLowerCase().includes(clean.toLowerCase()));
           return ch ? ch.toString() : match;
         });
         const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('ticket_' + t).setLabel(btns[t]).setStyle(ButtonStyle.Primary));
