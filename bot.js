@@ -196,31 +196,7 @@ client.on('messageCreate', async (message) => {
         } while (fetched.size >= 100);
         const reply = await message.channel.send('\u2705 \u041E\u0447\u0438\u0449\u0435\u043D\u043E ' + total + ' \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0439');
         setTimeout(() => reply.delete().catch(() => {}), 3000);
-          // Auto ticket setup
-  if (cmd === 'tsetup' || cmd === 'ticketsetup') {
-    if (!message.member?.permissions.has('Administrator')) return;
-    const gs = message.guild.channels.cache.filter(c => c.type === 0 || c.type === 5);
-    const keywords = {
-      support: ['support', 'поддержк', 'помощ'],
-      donat: ['donat', 'донат', 'привиле'],
-      ideas: ['idea', 'иде'],
-      complaint: ['complaint', 'жалоб', 'репорт']
-    };
-    const labels = { support: '🛠️ Поддержка', donat: '🏆 Донат-роли', ideas: '💡 Идеи', complaint: '👮 Жалобы' };
-    let count = 0;
-    for (const [type, words] of Object.entries(keywords)) {
-      const ch = gs.find(c => words.some(w => c.name.toLowerCase().includes(w)));
-      if (ch) {
-        const row = new ActionRowBuilder().addComponents(
-          new ButtonBuilder().setCustomId('ticket_' + type).setLabel(labels[type]).setStyle(ButtonStyle.Primary)
-        );
-        await ch.send({ components: [row] });
-        count++;
-      }
-    }
-    message.reply('✅ Настроено ' + count + ' тикет-панелей');
-    return;
-  }console.log('[PURGE] Purged all (' + total + ') by ' + message.author.tag);
+        console.log('[PURGE] Purged all (' + total + ') by ' + message.author.tag);
       } else {
         const deleted = await message.channel.bulkDelete(amount, true);
         total = deleted.size;
@@ -232,7 +208,21 @@ client.on('messageCreate', async (message) => {
       message.reply('\u274C ' + e.message).then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
     }
   }
-});
+
+  if (cmd === 'tsetup' || cmd === 'ticketsetup') {
+    if (!message.member?.permissions.has('Administrator')) return;
+    const gs = message.guild.channels.cache.filter(c => c.type === 0 || c.type === 5);
+    const kw = { support: ['support', 'поддержк'], donat: ['donat', 'донат', 'привиле'], ideas: ['idea', 'иде'], complaint: ['complaint', 'жалоб', 'репорт'] };
+    const lb = { support: '🛠️ Поддержка', donat: '🏆 Донат-роли', ideas: '💡 Идеи', complaint: '👮 Жалобы' };
+    let cnt = 0;
+    for (const [t, words] of Object.entries(kw)) {
+      const ch = gs.find(c => words.some(w => c.name.toLowerCase().includes(w)));
+      if (ch) { await ch.send({ components: [new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('ticket_' + t).setLabel(lb[t]).setStyle(ButtonStyle.Primary))] }); cnt++; }
+    }
+    message.reply('✅ Настроено ' + cnt + ' тикет-панелей');
+    return;
+  }
+}););
 
 
 // Ticket button handler
