@@ -40,6 +40,7 @@ const api = {
   getBotStats: (guildId: string) => ipcRenderer.invoke('get-bot-stats', guildId),
   getAllBotStats: () => ipcRenderer.invoke('get-all-bot-stats'),
   isBotRunning: () => ipcRenderer.invoke('is-bot-running'),
+  getBotLogs: () => ipcRenderer.invoke('get-bot-logs'),
 
   onMemberCounts: (callback: (data: Record<string, number>) => void) => {
     const handler = (_event: any, data: Record<string, number>) => callback(data);

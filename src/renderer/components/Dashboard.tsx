@@ -184,6 +184,41 @@ export default function Dashboard() {
           {guild.description && <div className="dash-info-item"><span>Описание</span><span>{guild.description}</span></div>}
         </div>
       </div>
+
+      {botRunning && <BotLogViewer />}
+    </div>
+  );
+}
+
+function BotLogViewer() {
+  const [logs, setLogs] = useState<Array<{ time: string; type: string; msg: string }>>([]);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      window.api.getBotLogs().then(r => setLogs(r.logs));
+      const iv = setInterval(() => window.api.getBotLogs().then(r => setLogs(r.logs)), 3000);
+      return () => clearInterval(iv);
+    }
+  }, [open]);
+
+  return (
+    <div className="dash-section">
+      <button className="btn btn-sm" onClick={() => setOpen(!open)} style={{ marginBottom: 8 }}>
+        📋 {open ? 'Скрыть логи бота' : 'Показать логи бота'} ({logs.length})
+      </button>
+      {open && (
+        <div className="bot-logs">
+          {logs.length === 0 && <div className="empty-state">Логов нет</div>}
+          {logs.map((l, i) => (
+            <div key={i} className={`log-line ${l.type.toLowerCase()}`}>
+              <span className="log-time">{l.time}</span>
+              <span className={`log-type ${l.type.toLowerCase()}`}>[{l.type}]</span>
+              <span className="log-msg">{l.msg}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

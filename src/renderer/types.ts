@@ -99,6 +99,7 @@ declare global {
       getBotStats: (guildId: string) => Promise<{ success: boolean; data?: any; error?: string }>;
       getAllBotStats: () => Promise<{ success: boolean; data?: Record<string, any>; error?: string }>;
       isBotRunning: () => Promise<{ running: boolean }>;
+      getBotLogs: () => Promise<{ logs: Array<{ time: string; type: string; msg: string }> }>;
 
       getGuilds: () => Promise<{ success: boolean; data?: DiscordGuild[]; error?: string }>;
       getGuild: (id: string) => Promise<{ success: boolean; data?: DiscordGuildFull; error?: string }>;

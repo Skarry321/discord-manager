@@ -1244,6 +1244,32 @@ input[type="checkbox"] {
 .dash-info-item:last-child { border-bottom: none; }
 .dash-info-item span:first-child { color: var(--text-muted); }
 
+/* === BOT LOGS === */
+.bot-logs {
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 300px; overflow-y: auto;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.log-line {
+  display: flex; gap: 8px; padding: 3px 6px;
+  border-radius: var(--radius-xs);
+}
+
+.log-line:hover { background: var(--bg-surface); }
+.log-time { color: var(--text-muted); flex-shrink: 0; }
+.log-type { font-weight: 700; flex-shrink: 0; }
+.log-type.info { color: var(--accent); }
+.log-type.warn { color: var(--yellow); }
+.log-type.error { color: var(--red); }
+.log-line.error { background: rgba(242, 139, 130, 0.08); }
+.log-msg { color: var(--text-primary); word-break: break-all; }
+
 @media (max-width: 800px) {
   .dash-cols { grid-template-columns: 1fr; }
 }

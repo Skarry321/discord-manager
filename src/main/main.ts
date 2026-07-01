@@ -10,7 +10,7 @@ import {
   editGuild, getGuild, isConnected, fillMemberCounts,
   ALL_PERMISSIONS,
 } from './discordService';
-import { startBot, stopBot, getGuildStats, getAllStats, getBotGuilds, isRunning as botRunning } from './botClient';
+import { startBot, stopBot, getGuildStats, getAllStats, getBotGuilds, isRunning as botRunning, getLogs } from './botClient';
 
 let mainWindow: BrowserWindow | null = null;
 const configPath = path.join(app.getPath('userData'), 'config.json');
@@ -417,4 +417,8 @@ ipcMain.handle('get-all-bot-stats', async () => {
 
 ipcMain.handle('is-bot-running', async () => {
   return { running: botRunning() };
+});
+
+ipcMain.handle('get-bot-logs', async () => {
+  return { logs: getLogs() };
 });

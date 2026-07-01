@@ -2,6 +2,16 @@ import { Client, GatewayIntentBits, ActivityType } from 'discord.js';
 
 let client: Client | null = null;
 let statsInterval: NodeJS.Timeout | null = null;
+let logs: Array<{ time: string; type: string; msg: string }> = [];
+
+function addLog(type: string, msg: string) {
+  const time = new Date().toLocaleTimeString();
+  logs.push({ time, type, msg });
+  if (logs.length > 200) logs = logs.slice(-200);
+  console.log(`[${time}][${type}] ${msg}`);
+}
+
+export function getLogs() { return logs; }
 
 interface GuildStats {
   memberCount: number;
@@ -41,16 +51,30 @@ export async function startBot(token: string): Promise<void> {
   });
 
   return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('Bot connection timeout')), 30000);
+    const timeout = setTimeout(() => {
+      addLog('ERROR', 'Bot connection timeout');
+      reject(new Error('Bot connection timeout'));
+    }, 30000);
     client!.once('ready', () => {
       clearTimeout(timeout);
+      addLog('INFO', `Bot connected as ${client!.user?.tag} (ID: ${client!.user?.id})`);
+      addLog('INFO', `On ${client!.guilds.cache.size} servers`);
       setupListeners();
       buildStats();
       statsInterval = setInterval(buildStats, 60000);
       resolve();
     });
-    client!.once('error', (e) => { clearTimeout(timeout); reject(e); });
-    client!.login(token).catch(reject);
+    client!.once('error', (e) => {
+      clearTimeout(timeout);
+      addLog('ERROR', e.message);
+      reject(e);
+    });
+    client!.on('warn', (w) => addLog('WARN', w));
+    client!.login(token).catch((e) => {
+      clearTimeout(timeout);
+      addLog('ERROR', `Login failed: ${e.message}`);
+      reject(e);
+    });
   });
 }
 
@@ -62,6 +86,8 @@ export async function stopBot(): Promise<void> {
 
 function setupListeners() {
   if (!client) return;
+  client.on('guildCreate', (guild) => addLog('INFO', `Added to server: ${guild.name} (${guild.id})`));
+  client.on('guildDelete', (guild) => addLog('WARN', `Removed from server: ${guild.name || guild.id}`));
   client.on('guildMemberAdd', (member) => {
     const existing = statsCache.get(member.guild.id);
     if (existing) {
