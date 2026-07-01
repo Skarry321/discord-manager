@@ -208,63 +208,6 @@ client.on('messageCreate', async (message) => {
       message.reply('\u274C ' + e.message).then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
     }
   }
-
-  if (cmd === 'setautorole' || cmd === 'autorole') {
-    if (!message.member?.permissions.has('Administrator')) return message.reply('\u274C \u041D\u0443\u0436\u043D\u044B \u043F\u0440\u0430\u0432\u0430 \u0430\u0434\u043C\u0438\u043D\u0430').then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
-    const role = message.mentions.roles.first();
-    if (!role) return message.reply('\u274C \u0423\u043A\u0430\u0436\u0438 \u0440\u043E\u043B\u044C: `.setautorole @\u0440\u043E\u043B\u044C`').then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
-    const c = loadConfig();
-    if (!c.botSettings) c.botSettings = {};
-    if (!c.botSettings[message.guild.id]) c.botSettings[message.guild.id] = {};
-    c.botSettings[message.guild.id].autoRole = role.id;
-    saveConfig({ botSettings: c.botSettings });
-    message.reply('\u2705 \u0410\u0432\u0442\u043E\u0440\u043E\u043B\u044C \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u0430: ' + role.name).then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
-    return;
-  }
-
-  if (cmd === 'removeautorole') {
-    if (!message.member?.permissions.has('Administrator')) return;
-    const c = loadConfig();
-    if (c.botSettings?.[message.guild.id]?.autoRole) {
-      delete c.botSettings[message.guild.id].autoRole;
-      if (Object.keys(c.botSettings[message.guild.id]).length === 0) delete c.botSettings[message.guild.id];
-      saveConfig({ botSettings: c.botSettings });
-      message.reply('\u2705 \u0410\u0432\u0442\u043E\u0440\u043E\u043B\u044C \u0443\u0434\u0430\u043B\u0435\u043D\u0430').then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
-    }
-    return;
-  }
-
-  if (cmd === 'setwelcome') {
-    if (!message.member?.permissions.has('Administrator')) return;
-    const ch = message.mentions.channels.first();
-    if (!ch) return message.reply('\u274C \u0423\u043A\u0430\u0436\u0438 \u043A\u0430\u043D\u0430\u043B: `.setwelcome #\u043A\u0430\u043D\u0430\u043B \u0442\u0435\u043A\u0441\u0442`').then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
-    const text = args.slice(2).join(' ') || '\u0414\u043E\u0431\u0440\u043E \u043F\u043E\u0436\u0430\u043B\u043E\u0432\u0430\u0442\u044C, {mention}!';
-    const c = loadConfig();
-    if (!c.botSettings) c.botSettings = {};
-    if (!c.botSettings[message.guild.id]) c.botSettings[message.guild.id] = {};
-    c.botSettings[message.guild.id].welcomeChannel = ch.id;
-    c.botSettings[message.guild.id].welcomeMessage = text;
-    saveConfig({ botSettings: c.botSettings });
-    message.reply('\u2705 \u041F\u0440\u0438\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u0435 \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043D\u043E \u0432 #' + ch.name).then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
-    return;
-  }
-
-  if (cmd === 'settings') {
-    if (!message.member?.permissions.has('Administrator')) return;
-    const s = getSettings(message.guild.id);
-    const lines = [];
-    if (s.autoRole) {
-      const r = message.guild.roles.cache.get(s.autoRole);
-      lines.push('\uD83C\uDFAF \u0410\u0432\u0442\u043E\u0440\u043E\u043B\u044C: ' + (r ? r.name : 'ID: ' + s.autoRole));
-    } else lines.push('\uD83C\uDFAF \u0410\u0432\u0442\u043E\u0440\u043E\u043B\u044C: \u043D\u0435 \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043D\u0430');
-    if (s.welcomeChannel) {
-      const c = message.guild.channels.cache.get(s.welcomeChannel);
-      lines.push('\uD83D\uDC4B \u041F\u0440\u0438\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u0435: #' + (c ? c.name : s.welcomeChannel));
-      lines.push('\uD83D\uDCDD \u0422\u0435\u043A\u0441\u0442: ' + (s.welcomeMessage || '\u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u043D\u044B\u0439'));
-    } else lines.push('\uD83D\uDC4B \u041F\u0440\u0438\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u0435: \u043D\u0435 \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043D\u043E');
-    message.reply(lines.join('\n')).then(m => setTimeout(() => m.delete().catch(() => {}), 10000));
-    return;
-  }
 });
 
 client.login(token).catch(e => {

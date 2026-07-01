@@ -1,6 +1,19 @@
 import { Client, GatewayIntentBits, ActivityType, AttachmentBuilder } from 'discord.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { app } from 'electron';
+
+function getConfigPath(): string {
+  try { return path.join(app.getPath('userData'), 'config.json'); } catch { return ''; }
+}
+
+function getConfig(): any {
+  try {
+    const p = getConfigPath();
+    if (p && fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf-8'));
+  } catch {}
+  return {};
+}
 
 let client: Client | null = null;
 let statsInterval: NodeJS.Timeout | null = null;
@@ -87,11 +100,6 @@ export async function startBot(token: string): Promise<void> {
   }
 }
 
-function getConfigPath(): string {
-  const home = process.env.APPDATA || (process.platform === 'darwin' ? process.env.HOME + '/Library/Application Support' : process.env.HOME + '/.config');
-  return path.join(home, 'discord-manager', 'config.json');
-}
-
 export async function stopBot(): Promise<void> {
   if (statsInterval) { clearInterval(statsInterval); statsInterval = null; }
   if (client) { client.destroy(); client = null; }
@@ -104,6 +112,11 @@ function setupListeners() {
   client.on('guildDelete', (g) => addLog('WARN', `Removed from: ${g.name || g.id}`));
 
   client.on('guildMemberAdd', async (member) => {
+    const cfg = getConfig();
+    if (cfg.botSettings?._url?.serverUrl) {
+      addLog('INFO', 'Remote bot configured, skipping local welcome/role');
+      return;
+    }
     addLog('INFO', `Member joined: ${member.user.tag} on ${member.guild.name}`);
 
     const roleId = autoRoles.get(member.guild.id);
