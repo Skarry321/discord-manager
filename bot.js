@@ -1,8 +1,13 @@
-const { Client, GatewayIntentBits, ActivityType, AttachmentBuilder } = require('discord.js');
+﻿const { Client, GatewayIntentBits, ActivityType, AttachmentBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
-const CONFIG_PATH = process.env.CONFIG_PATH || path.join(process.env.APPDATA || (process.platform === 'darwin' ? process.env.HOME + '/Library/Application Support' : process.env.HOME + '/.config'), 'discord-manager', 'config.json');
+const CONFIG_PATH = process.env.CONFIG_PATH || path.join(
+  process.env.APPDATA || (process.platform === 'darwin'
+    ? process.env.HOME + '/Library/Application Support'
+    : process.env.HOME + '/.config'),
+  'discord-manager', 'config.json'
+);
 
 function loadConfig() {
   try {
@@ -22,18 +27,15 @@ console.log('[BOT] Config path:', CONFIG_PATH);
 const config = loadConfig();
 const token = process.env.BOT_TOKEN || config.botToken;
 if (!token) {
-  console.log('[BOT] No bot token found in config. Run the app first to set up.');
+  console.log('[BOT] No bot token found. Set BOT_TOKEN env var or run app first.');
   process.exit(1);
 }
 
 const client = new Client({
   intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildPresences,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildPresences, GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent, GatewayIntentBits.GuildVoiceStates,
   ],
   presence: { activities: [{ name: 'Discord Manager', type: ActivityType.Watching }], status: 'online' },
 });
@@ -52,10 +54,8 @@ client.on('guildDelete', (g) => console.log('[BOT] Removed from:', g.name || g.i
 client.on('guildMemberAdd', async (member) => {
   const s = getSettings(member.guild.id);
   if (s.autoRole) {
-    try {
-      await member.roles.add(s.autoRole);
-      console.log(`[AUTO-ROLE] ${member.user.tag} -> ${member.guild.roles.cache.get(s.autoRole)?.name}`);
-    } catch (e) { console.log('[AUTO-ROLE ERROR]', e.message); }
+    try { await member.roles.add(s.autoRole); console.log(`[AUTO-ROLE] ${member.user.tag}`); }
+    catch (e) { console.log('[AUTO-ROLE ERROR]', e.message); }
   }
   if (s.welcomeChannel) {
     try {
@@ -71,12 +71,9 @@ client.on('guildMemberAdd', async (member) => {
             const ch = member.guild.channels.cache.find(c => c.name?.toLowerCase() === n.toLowerCase() || c.name?.toLowerCase().includes(n.toLowerCase()));
             return ch ? `<#${ch.id}>` : `#${n}`;
           });
-
-        let imgUrl = s.welcomeImage || '';
-        imgUrl = imgUrl.replace(/\{name\}/g, member.user.username).replace(/\{server\}/g, member.guild.name);
+        let imgUrl = (s.welcomeImage || '').replace(/\{name\}/g, member.user.username);
         const files = [];
         let embedImg = '';
-
         if (imgUrl.startsWith('data:')) {
           const m = imgUrl.match(/^data:image\/(\w+);base64,(.+)$/);
           if (m) {
@@ -84,10 +81,7 @@ client.on('guildMemberAdd', async (member) => {
             files.push(new AttachmentBuilder(Buffer.from(m[2], 'base64'), { name: `welcome.${ext}` }));
             embedImg = `attachment://welcome.${ext}`;
           }
-        } else if (imgUrl) {
-          embedImg = imgUrl;
-        }
-
+        } else if (imgUrl) embedImg = imgUrl;
         if (s.welcomeType === 'embed') {
           const embed = { description: msg, color: parseInt((s.embedColor || '#7c3aed').replace('#', ''), 16) };
           if (s.embedTitle) embed.title = s.embedTitle.replace(/\{name\}/g, member.user.username);
@@ -99,7 +93,7 @@ client.on('guildMemberAdd', async (member) => {
           await channel.send({ embeds: [embed], files });
         } else {
           let content = msg;
-          if (embedImg && !embedImg.startsWith('attachment://')) content = `${embedImg}\n${content}`;
+          if (embedImg && !embedImg.startsWith('attachment://')) content = embedImg + '\n' + content;
           await channel.send({ content, files });
         }
         console.log(`[WELCOME] Sent to ${member.user.tag} in #${channel.name}`);
@@ -115,22 +109,41 @@ client.on('messageCreate', async (message) => {
   const args = message.content.slice(1).trim().split(/\s+/);
   const cmd = args[0].toLowerCase();
 
-  if (cmd === 'очистить' || cmd === 'clear') {
+  if (cmd === '\u043E\u0447\u0438\u0441\u0442\u0438\u0442\u044C' || cmd === 'clear' || cmd === 'purge') {
     if (!message.member?.permissions.has('Administrator') && !message.member?.permissions.has('ManageMessages')) {
-      return message.reply('❌ Нужны права администратора').then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
+      return message.reply('\u274C \u041D\u0443\u0436\u043D\u044B \u043F\u0440\u0430\u0432\u0430 \u0430\u0434\u043C\u0438\u043D\u0438\u0441\u0442\u0440\u0430\u0442\u043E\u0440\u0430').then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
     }
-    const amount = parseInt(args[1]);
-    if (!amount || amount < 1 || amount > 100) {
-      return message.reply('❌ От 1 до 100').then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
+
+    const amount = args[1]?.toLowerCase() === 'all' ? 9999 : parseInt(args[1]);
+    if (!amount || amount < 1 || (amount > 100 && amount !== 9999)) {
+      return message.reply('\u274C \u0423\u043A\u0430\u0436\u0438 \u0447\u0438\u0441\u043B\u043E \u043E\u0442 1 \u0434\u043E 100 \u0438\u043B\u0438 "all"').then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
     }
+
     try {
       await message.delete();
-      const deleted = await message.channel.bulkDelete(amount, true);
-      const reply = await message.channel.send(`✅ Удалено ${deleted.size} сообщений`);
-      setTimeout(() => reply.delete().catch(() => {}), 3000);
-      console.log(`[PURGE] ${deleted.size} messages by ${message.author.tag} in #${message.channel.name}`);
+      let total = 0;
+
+      if (amount === 9999) {
+        let fetched;
+        do {
+          fetched = await message.channel.messages.fetch({ limit: 100 });
+          if (fetched.size > 0) {
+            const deleted = await message.channel.bulkDelete(fetched, true);
+            total += deleted.size;
+          }
+        } while (fetched.size >= 100);
+        const reply = await message.channel.send('\u2705 \u041E\u0447\u0438\u0449\u0435\u043D\u043E ' + total + ' \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0439');
+        setTimeout(() => reply.delete().catch(() => {}), 3000);
+        console.log('[PURGE] Purged all (' + total + ') by ' + message.author.tag);
+      } else {
+        const deleted = await message.channel.bulkDelete(amount, true);
+        total = deleted.size;
+        const reply = await message.channel.send('\u2705 \u0423\u0434\u0430\u043B\u0435\u043D\u043E ' + total + ' \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0439');
+        setTimeout(() => reply.delete().catch(() => {}), 3000);
+        console.log('[PURGE] Deleted ' + total + ' by ' + message.author.tag);
+      }
     } catch (e) {
-      message.reply(`❌ ${e.message}`).then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
+      message.reply('\u274C ' + e.message).then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
     }
   }
 });
