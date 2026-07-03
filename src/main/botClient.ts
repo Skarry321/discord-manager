@@ -112,11 +112,6 @@ function setupListeners() {
   client.on('guildDelete', (g) => addLog('WARN', `Removed from: ${g.name || g.id}`));
 
   client.on('guildMemberAdd', async (member) => {
-    const cfg = getConfig();
-    if (cfg.botSettings?._url?.serverUrl) {
-      addLog('INFO', 'Remote bot configured, skipping local welcome/role');
-      return;
-    }
     addLog('INFO', `Member joined: ${member.user.tag} on ${member.guild.name}`);
 
     const roleId = autoRoles.get(member.guild.id);
