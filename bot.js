@@ -215,11 +215,11 @@ client.on('messageCreate', async (message) => {
     const kw = { support: ['support', 'поддержк', 'помощ'], donat: ['donat', 'донат', 'привиле'], ideas: ['idea', 'иде', 'предлож'], complaint: ['complaint', 'жалоб', 'репорт'] };
         const texts = {
       support: '**Приветствуем Вас в канале поддержки Discord сервера HideRealm**\nЧтобы задать свой вопрос, нажмите на кнопку под данным сообщением!\n\n**ВАЖНАЯ ИНФОРМАЦИЯ:**\n— В данном канале действуют все правила, прописанные в #правила',
-      donat: 'Как получить роль, соответствующей вашей привилегии?\n1. Нажмите на кнопку под данным сообщением.\n2. Следуйте указаниям бота в новом созданном канале.\n\n@IMMORTAL\n@CRUSADER\n@DESTROYER\n@PALADIN\n@ELITE\n@GUARDIAN\n@LORD',
+      donat: 'Как получить роль, соответствующую вашей привилегии?\n1. Нажмите на кнопку под данным сообщением.\n2. Следуйте указаниям бота в новом созданном канале.\n\n@IMMORTAL\n@CRUSADER\n@DESTROYER\n@PALADIN\n@ELITE\n@GUARDIAN\n@LORD',
       ideas: 'В данном канале можно отправить идею\nлибо для Гриферского режима, либо для Discord сервера.',
       complaint: '**Жалобы на нарушения на Discord сервере**\nВ данном канале Вы можете отправить жалобу на нарушение, которое произошло на Discord сервере.\nМы не принимаем жалобы на нарушения, произошедшие на Minecraft сервере!'
     };
-      donat: 'Как получить роль, соответствующей вашей привилегии?\n1. Нажмите на кнопку под данным сообщением.\n2. Следуйте указаниям бота в новом созданном канале.\n\n@IMMORTAL\n@CRUSADER\n@DESTROYER\n@PALADIN\n@ELITE\n@GUARDIAN\n@LORD',
+    const btns = { support: '🛠️ Создать тикет', donat: '🏆 Получить роль', ideas: '💡 Отправить идею', complaint: '👮 Подать жалобу' };
     let cnt = 0;
     for (const [t, words] of Object.entries(kw)) {
       const ch = gs.find(c => words.some(w => c.name.toLowerCase().includes(w)));
@@ -262,7 +262,7 @@ client.on('interactionCreate', async (interaction) => {
 
   if (!interaction.customId.startsWith('ticket_')) return;
   const type = interaction.customId.slice(7);
-      donat: 'Как получить роль, соответствующей вашей привилегии?\n1. Нажмите на кнопку под данным сообщением.\n2. Следуйте указаниям бота в новом созданном канале.\n\n@IMMORTAL\n@CRUSADER\n@DESTROYER\n@PALADIN\n@ELITE\n@GUARDIAN\n@LORD',
+  const typeNames = { support: 'Support', donat: 'Donat', ideas: 'Ideas', complaint: 'Complaint' };
 
   // Ideas opens a modal
   if (type === 'ideas') {
@@ -287,8 +287,8 @@ client.on('interactionCreate', async (interaction) => {
     const desc = type === 'support'
       ? '**\u041E\u0431\u0440\u0430\u0449\u0435\u043D\u0438\u0435 \u043E\u0442 ' + interaction.user.username + '**\n\u041D\u0430\u043F\u0438\u0448\u0438\u0442\u0435 \u0441\u0432\u043E\u0439 \u0432\u043E\u043F\u0440\u043E\u0441 \u0432 \u0434\u0430\u043D\u043D\u043E\u043C \u043A\u0430\u043D\u0430\u043B\u0435\n\n**\u0410\u0432\u0442\u043E\u0440:** @' + interaction.user.username + '\n**ID:** ' + interaction.user.id
       : type === 'donat'
-      ? '\u2b50 **\u041a\u0430\u043a \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0440\u043e\u043b\u044c, \u0441\u043e\u043e\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0443\u044e\u0449\u0443\u044e \u0432\u0430\u0448\u0435\u0439 \u043f\u0440\u0438\u0432\u0438\u043b\u0435\u0433\u0438\u0438?**\n\n\u0414\u043b\u044f \u043f\u043e\u043b\u0443\u0447\u0435\u043d\u0438\u044f \u0440\u043e\u043b\u0438, \u043e\u0441\u0442\u0430\u0432\u044c\u0442\u0435 \u0437\u0430\u044f\u0432\u043a\u0443 \u043f\u043e \u0444\u043e\u0440\u043c\u0435:\n\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\n  \u0031\ufe0f\u20e3 \u0412\u0430\u0448 \u043d\u0438\u043a \u043d\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u0435.\n\n  \u0032\ufe0f\u20e3 \u0412\u0430\u0448\u0430 \u043f\u0440\u0438\u0432\u0438\u043b\u0435\u0433\u0438\u044f \u043d\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u0435.\n\n  \u0033\ufe0f\u20e3 \u041f\u0440\u0438\u043b\u043e\u0436\u0438\u0442\u0435 \u0441\u043a\u0440\u0438\u043d\u0448\u043e\u0442 \u0438\u0437 \u0438\u0433\u0440\u044b, \u043d\u0430 \u043a\u043e\u0442\u043e\u0440\u043e\u043c:\n     \u2014 \u0412 \u0431\u043e\u043a\u043e\u0432\u043e\u0439 \u043f\u0430\u043d\u0435\u043b\u0438 \u0432\u0438\u0434\u043d\u043e \u0432\u0430\u0448\u0443 \u043f\u0440\u0438\u0432\u0438\u043b\u0435\u0433\u0438\u044e.\n     \u2014 \u0412\u0441\u0442\u0430\u0432\u044c\u0442\u0435 \u0441\u0432\u043e\u0439 \u0442\u0435\u0433 \u0432 \u0442\u0435\u043a\u0441\u0442\u043e\u0432\u0443\u044e \u0441\u0442\u0440\u043e\u043a\u0443.\n     \u2014 \u041e\u0442\u043f\u0440\u0430\u0432\u043b\u044f\u0442\u044c \u0442\u0435\u0433 \u0432 \u0447\u0430\u0442 \u043d\u0435 \u043d\u0443\u0436\u043d\u043e!\n     \u2014 \u041f\u0440\u0438\u043c\u0435\u0440 \u0441\u043a\u0440\u0438\u043d\u0448\u043e\u0442\u0430 \u043f\u043e\u0434 \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435\u043c.\n\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500',
-      : '**\u0424\u043E\u0440\u043C\u0430 \u043F\u043E\u0434\u0430\u0447\u0438 \u0436\u0430\u043B\u043E\u0431\u044B**\n\n1. **\u041D\u0430\u0440\u0443\u0448\u0438\u0442\u0435\u043B\u044C** [\u0423\u043F\u043E\u043C\u0438\u043D\u0430\u043D\u0438\u0435/ID/\u0422\u0435\u0433]\n2. **\u0427\u0442\u043E \u043D\u0430\u0440\u0443\u0448\u0438\u043B?**\n3. **\u0414\u043E\u043A\u0430\u0437\u0430\u0442\u0435\u043B\u044C\u0441\u0442\u0432\u0430** [\u0421\u043A\u0440\u0438\u043D\u0448\u043E\u0442/\u0421\u0441\u044B\u043B\u043A\u0430]';
+      ? '**\u0414\u043B\u044F \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u044F \u0440\u043E\u043B\u0438, \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0443\u044E\u0449\u0435\u0439 \u0432\u0430\u0448\u0435\u0439 \u043F\u0440\u0438\u0432\u0438\u043B\u0435\u0433\u0438\u0438, \u043E\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u0437\u0430\u044F\u0432\u043A\u0443 \u043F\u043E \u0444\u043E\u0440\u043C\u0435:**\n\n1\uFE0F\u20E3 **\u0412\u0430\u0448 \u043D\u0438\u043A \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u0435.**\n2\uFE0F\u20E3 **\u0412\u0430\u0448\u0430 \u043F\u0440\u0438\u0432\u0438\u043B\u0435\u0433\u0438\u044F \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u0435.**\n3\uFE0F\u20E3 **\u041F\u0440\u0438\u043B\u043E\u0436\u0438\u0442\u0435 \u0441\u043A\u0440\u0438\u043D\u0448\u043E\u0442**'
+      : '**\u0424\u043E\u0440\u043C\u0430 \u043F\u043E\u0434\u0430\u0447\u0438 \u0436\u0430\u043B\u043E\u0431\u044B**\n\n1\uFE0F\u20E3 **\u041D\u0430\u0440\u0443\u0448\u0438\u0442\u0435\u043B\u044C** [\u0423\u043F\u043E\u043C\u0438\u043D\u0430\u043D\u0438\u0435/ID/\u0422\u0435\u0433]\n2\uFE0F\u20E3 **\u0427\u0442\u043E \u043D\u0430\u0440\u0443\u0448\u0438\u043B?**\n3\uFE0F\u20E3 **\u0414\u043E\u043A\u0430\u0437\u0430\u0442\u0435\u043B\u044C\u0441\u0442\u0432\u0430** [\u0421\u043A\u0440\u0438\u043D\u0448\u043E\u0442/\u0421\u0441\u044B\u043B\u043A\u0430]';
 
     const embed = { color: 0xFF8800, description: desc, footer: { text: interaction.guild?.name || 'Discord' } };
     if (interaction.user.avatarURL()) embed.author = { name: interaction.user.username, icon_url: interaction.user.avatarURL() };
@@ -296,8 +296,8 @@ client.on('interactionCreate', async (interaction) => {
     const sendOpts = { embeds: [embed], components: [closeBtn] };
     if (type === 'donat') {
       const fs = require('fs');
-      const path = require('path');
-      const imgPath = path.join(__dirname, 'dont.png');
+      const pathMod = require('path');
+      const imgPath = pathMod.join(__dirname, 'dont.png');
       if (fs.existsSync(imgPath)) {
         const { AttachmentBuilder } = require('discord.js');
         const attachment = new AttachmentBuilder(imgPath, { name: 'example.png' });
@@ -329,22 +329,8 @@ client.on('interactionCreate', async (interaction) => {
       type: ChannelType.PrivateThread,
     });
     await thread.members.add(interaction.user.id);
-    const closeBtn = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('close_' + thread.id).setLabel('🔒 Close ticket').setStyle(ButtonStyle.Danger));
     const embed = { color: 0xFF8800, description: '**💡 Новая идея от ' + interaction.user.username + '**\n\n' + idea, footer: { text: interaction.guild?.name || 'Discord' } };
-    // Send with image for donat tickets
-    const sendOpts = { embeds: [embed], components: [closeBtn] };
-    if (type === 'donat') {
-      const fs = require('fs');
-      const path = require('path');
-      const imgPath = path.join(__dirname, 'dont.png');
-      if (fs.existsSync(imgPath)) {
-        const { AttachmentBuilder } = require('discord.js');
-        const attachment = new AttachmentBuilder(imgPath, { name: 'example.png' });
-        sendOpts.files = [attachment];
-        embed.image = { url: 'attachment://example.png' };
-      }
-    }
-    await thread.send(sendOpts);
+    await thread.send({ embeds: [embed] });
     console.log('[IDEA] from ' + interaction.user.tag);
   } catch (e) {
     console.log('[IDEA ERROR]', e.message);
