@@ -215,7 +215,7 @@ client.on('messageCreate', async (message) => {
     const kw = { support: ['support', 'поддержк', 'помощ'], donat: ['donat', 'донат', 'привиле'], ideas: ['idea', 'иде', 'предлож'], complaint: ['complaint', 'жалоб', 'репорт'] };
         const texts = {
       support: '**Приветствуем Вас в канале поддержки Discord сервера HideRealm**\nЧтобы задать свой вопрос, нажмите на кнопку под данным сообщением!\n\n**ВАЖНАЯ ИНФОРМАЦИЯ:**\n— В данном канале действуют все правила, прописанные в #правила',
-      donat: 'Как получить роль, соответствующую вашей привилегии?\n1. Нажмите на кнопку под данным сообщением.\n2. Следуйте указаниям бота в новом созданном канале.\n\n@IMMORTAL\n@CRUSADER\n@DESTROYER\n@PALADIN\n@ELITE\n@GUARDIAN\n@LORD',
+      donat: '\u2b50 **\u041a\u0430\u043a \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0440\u043e\u043b\u044c, \u0441\u043e\u043e\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0443\u044e\u0449\u0443\u044e \u0432\u0430\u0448\u0435\u0439 \u043f\u0440\u0438\u0432\u0438\u043b\u0435\u0433\u0438\u0438?**\n\n\u0414\u043b\u044f \u043f\u043e\u043b\u0443\u0447\u0435\u043d\u0438\u044f \u0440\u043e\u043b\u0438, \u043e\u0441\u0442\u0430\u0432\u044c\u0442\u0435 \u0437\u0430\u044f\u0432\u043a\u0443 \u043f\u043e \u0444\u043e\u0440\u043c\u0435:\n\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\n  \u0031\ufe0f\u20e3 \u0412\u0430\u0448 \u043d\u0438\u043a \u043d\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u0435.\n\n  \u0032\ufe0f\u20e3 \u0412\u0430\u0448\u0430 \u043f\u0440\u0438\u0432\u0438\u043b\u0435\u0433\u0438\u044f \u043d\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u0435.\n\n  \u0033\ufe0f\u20e3 \u041f\u0440\u0438\u043b\u043e\u0436\u0438\u0442\u0435 \u0441\u043a\u0440\u0438\u043d\u0448\u043e\u0442 \u0438\u0437 \u0438\u0433\u0440\u044b, \u043d\u0430 \u043a\u043e\u0442\u043e\u0440\u043e\u043c:\n     \u2014 \u0412 \u0431оковой \u043fанели \u0432идно \u0432ашу \u043fривилегию.\n     \u2014 \u0412ставьте \u0441вой \u0442ег \u0432 \u0442екстовую \u0441троку.\n     \u2014 \u041eтправлять \u0442ег \u0432 \u0447ат \u043dе \u043dужно!\n     \u2014 \u041fример \u0441криншота \u043fод \u0441ообщением.\n\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500',
       ideas: 'В данном канале можно отправить идею\nлибо для Гриферского режима, либо для Discord сервера.',
       complaint: '**Жалобы на нарушения на Discord сервере**\nВ данном канале Вы можете отправить жалобу на нарушение, которое произошло на Discord сервере.\nМы не принимаем жалобы на нарушения, произошедшие на Minecraft сервере!'
     };
@@ -237,7 +237,18 @@ client.on('messageCreate', async (message) => {
           return ch ? ch.toString() : match;
         });
         const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('ticket_' + t).setLabel(btns[t]).setStyle(ButtonStyle.Primary));
-        await ch.send({ content: msg, components: [row] });
+                const sendOptions = { content: msg, components: [row] };
+        if (t === 'donat') {
+          const fs = require('fs');
+          const path = require('path');
+          const imgPath = path.join(__dirname, 'dont.png');
+          if (fs.existsSync(imgPath)) {
+            const { AttachmentBuilder } = require('discord.js');
+            const attachment = new AttachmentBuilder(imgPath, { name: 'example.png' });
+            sendOptions.files = [attachment];
+          }
+        }
+        await ch.send(sendOptions);
         cnt++;
       }
     }
