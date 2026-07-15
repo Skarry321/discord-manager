@@ -284,7 +284,7 @@ client.on('interactionCreate', async (interaction) => {
 
     const perms = [
       { id: interaction.guild.roles.everyone.id, deny: ['ViewChannel'] },
-      { id: interaction.user.id, allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory'] },
+      { id: interaction.user.id, allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory', 'AttachFiles'] },
     ];
 
     const staffTerms = ['admin', 'staff', 'moder', 'support', 'helper'];
@@ -330,22 +330,25 @@ client.on('interactionCreate', async (interaction) => {
   await interaction.reply({ content: '✅ Идея отправлена на рассмотрение!', ephemeral: true });
 
   try {
-    // Find admin channel or create thread
-    const adminChan = interaction.guild.channels.cache.find(c => c.name.toLowerCase().includes('admin') || c.name.toLowerCase().includes('staff'));
-    const target = adminChan || interaction.channel;
-    const thread = await target.threads.create({
-      name: '💡 Идея от ' + interaction.user.username,
-      type: ChannelType.PrivateThread,
+    const staffRole = interaction.guild.roles.cache.find(r => ['admin','staff','moder','support','helper'].some(t => r.name.toLowerCase().includes(t)));
+    const perms = [
+      { id: interaction.guild.roles.everyone.id, deny: ['ViewChannel'] },
+      { id: interaction.user.id, allow: ['ViewChannel','SendMessages','ReadMessageHistory','AttachFiles'] },
+    ];
+    if (staffRole) perms.push({ id: staffRole.id, allow: ['ViewChannel','SendMessages','ReadMessageHistory','ManageChannels'] });
+    const ch = await interaction.guild.channels.create({
+      name: 'idea-' + interaction.user.username,
+      type: 0,
+      permissionOverwrites: perms,
     });
-    await thread.members.add(interaction.user.id);
+    const closeBtn = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('close_' + ch.id).setLabel('🔒 Close ticket').setStyle(ButtonStyle.Danger));
     const embed = { color: 0xFF8800, description: '**💡 Новая идея от ' + interaction.user.username + '**\n\n' + idea, footer: { text: interaction.guild?.name || 'Discord' } };
-    await thread.send({ embeds: [embed] });
-    console.log('[IDEA] from ' + interaction.user.tag);
+    await ch.send({ embeds: [embed], components: [closeBtn] });
+    console.log('[IDEA] from ' + interaction.user.tag + ' ch: ' + ch.id);
   } catch (e) {
     console.log('[IDEA ERROR]', e.message);
   }
 });
-
 client.login(token).catch(e => {
   console.log('[BOT] Login failed:', e.message);
   process.exit(1);
