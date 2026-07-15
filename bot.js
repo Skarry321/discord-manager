@@ -251,7 +251,7 @@ client.on('interactionCreate', async (interaction) => {
   if (!interaction.isButton()) return;
 
   if (interaction.customId.startsWith('close_')) {
-    if (!interaction.member?.permissions.has('Administrator') && !interaction.member?.permissions.has('ManageThreads')) {
+    if (!interaction.member?.permissions.has('Administrator')) {
       return interaction.reply({ content: '\u274C Only admins can close tickets', ephemeral: true });
     }
     await interaction.reply({ content: '\uD83D\uDD12 Closing ticket...', ephemeral: true });
