@@ -280,7 +280,19 @@ client.on('interactionCreate', async (interaction) => {
     const thread = await interaction.channel.threads.create({ name: typeNames[type] + ' - ' + interaction.user.username, type: ChannelType.PrivateThread });
     await thread.members.add(interaction.user.id);
 
-    const closeBtn = new ActionRowBuilder().addComponents(
+    
+    // Add staff roles to thread
+    const staffTerms = ['admin', 'staff', 'moder', 'support', 'helper'];
+    const staffRole = interaction.guild.roles.cache.find(r => staffTerms.some(t => r.name.toLowerCase().includes(t)));
+    if (staffRole) {
+      for (const m of interaction.guild.members.cache.values()) {
+        if (m.roles.cache.has(staffRole.id) && !m.user.bot) {
+          try { await thread.members.add(m.id); } catch {}
+        }
+      }
+    }
+
+const closeBtn = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('close_' + thread.id).setLabel('\uD83D\uDD12 Close ticket').setStyle(ButtonStyle.Danger)
     );
 
