@@ -282,6 +282,7 @@ client.on('interactionCreate', async (interaction) => {
 
     
     // Add staff roles to thread
+    await interaction.guild.members.fetch();
     const staffTerms = ['admin', 'staff', 'moder', 'support', 'helper'];
     const staffRole = interaction.guild.roles.cache.find(r => staffTerms.some(t => r.name.toLowerCase().includes(t)));
     if (staffRole) {
