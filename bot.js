@@ -320,8 +320,21 @@ client.on('interactionCreate', async (interaction) => {
 
     const embed = { color: 0xFF8800, description: desc, footer: { text: interaction.guild?.name || 'Discord' } };
     if (interaction.user.avatarURL()) embed.author = { name: interaction.user.username, icon_url: interaction.user.avatarURL() };
-    if (type === 'donat') embed.image = { url: 'https://cdn.discordapp.com/attachments/1521472280251858977/1522573036736348302/image.png?ex=6a581f63&is=6a56cde3&hm=5843cc55a27dedf75a33218be0ba84a68affbbf63ee6cc483477dec3ea01da82&' };
-    await channel.send({ embeds: [embed], components: [closeBtn] });
+    if (type === 'donat') {
+      const fs = require('fs');
+      const pathMod = require('path');
+      const imgPath = pathMod.join(__dirname, 'dont.png');
+      if (fs.existsSync(imgPath)) {
+        const { AttachmentBuilder } = require('discord.js');
+        const attachment = new AttachmentBuilder(imgPath, { name: 'example.png' });
+        embed.image = { url: 'attachment://example.png' };
+        await channel.send({ embeds: [embed], components: [closeBtn], files: [attachment] });
+      } else {
+        await channel.send({ embeds: [embed], components: [closeBtn] });
+      }
+    } else {
+      await channel.send({ embeds: [embed], components: [closeBtn] });
+    }
 
     await interaction.editReply({ content: '\u2705 Ticket: ' + channel.toString() });
     console.log('[TICKET] ' + type + ' by ' + interaction.user.tag + ' channel: ' + channel.id);
