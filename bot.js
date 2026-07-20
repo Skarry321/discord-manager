@@ -58,6 +58,8 @@ const server = http.createServer((req, res) => {
         });
         if (Object.keys(config.botSettings[guildId]).length === 0) delete config.botSettings[guildId];
         saveConfig({ botSettings: config.botSettings });
+        // Also update in-memory cache
+        memConfig.botSettings = config.botSettings;
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true }));
         console.log('[API] Config updated for', guildId, data);
@@ -77,9 +79,15 @@ server.listen(PORT, () => {
 });
 
 function getSettings(guildId) {
+  // Try in-memory first, then file
+  if (memConfig.botSettings?.[guildId]) return memConfig.botSettings[guildId];
   const config = loadConfig();
   return config.botSettings?.[guildId] || {};
 }
+
+// In-memory config cache
+let memConfig = {};
+try { memConfig = loadConfig(); } catch {}
 
 console.log('[BOT] Starting Discord Manager Bot...');
 console.log('[BOT] Config path:', CONFIG_PATH);
