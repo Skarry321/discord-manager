@@ -363,8 +363,11 @@ client.on('interactionCreate', async (interaction) => {
   if (!interaction.isButton()) return;
 
   if (interaction.customId.startsWith('close_')) {
-    await interaction.reply({ content: '\uD83D\uDD12 Закрытие тикета...', ephemeral: true });
-    await interaction.channel.send('\uD83D\uDD12 Тикет закрыт ' + interaction.user.username);
+    if (!interaction.member?.permissions.has('Administrator')) {
+      return interaction.reply({ content: '❌ Только администраторы могут закрывать тикеты', ephemeral: true });
+    }
+    await interaction.reply({ content: '🔒 Закрытие тикета...', ephemeral: true });
+    await interaction.channel.send('🔒 Тикет закрыт ' + interaction.user.username);
     setTimeout(async () => {
       try { await interaction.channel.delete(); } catch {}
     }, 3000);
