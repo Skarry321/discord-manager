@@ -4,23 +4,43 @@ const path = require('path');
 const http = require('http');
 const url = require('url');
 
-const CONFIG_PATH = process.env.CONFIG_PATH || path.join(process.env.RAILWAY_VOLUME || '', 'config.json');
+const DEFAULT_CONFIG_PATH = './config.json';
+const VOLUME_PATH = process.env.RAILWAY_VOLUME || '';
+const CONFIG_PATH = process.env.CONFIG_PATH || (VOLUME_PATH ? path.join(VOLUME_PATH, 'config.json') : DEFAULT_CONFIG_PATH);
 const PORT = process.env.PORT || 3000;
 
+console.log('[CONFIG] Path:', CONFIG_PATH);
+console.log('[CONFIG] RAILWAY_VOLUME:', VOLUME_PATH || 'not set');
+
 function loadConfig() {
-  try {
-    if (fs.existsSync(CONFIG_PATH)) return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
-  } catch {}
+  // Try primary path first, then fallback to default
+  const paths = [CONFIG_PATH];
+  if (CONFIG_PATH !== DEFAULT_CONFIG_PATH) paths.push(DEFAULT_CONFIG_PATH);
+  for (const p of paths) {
+    try {
+      if (fs.existsSync(p)) {
+        const data = JSON.parse(fs.readFileSync(p, 'utf-8'));
+        return data;
+      }
+    } catch {}
+  }
   return {};
 }
 
 function saveConfig(data) {
   try {
+    // Save to CONFIG_PATH
     const dir = path.dirname(CONFIG_PATH);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     const existing = loadConfig();
     const merged = { ...existing, ...data };
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(merged, null, 2), 'utf-8');
+    // Also save to default path as backup
+    if (CONFIG_PATH !== DEFAULT_CONFIG_PATH) {
+      try {
+        fs.writeFileSync(DEFAULT_CONFIG_PATH, JSON.stringify(merged, null, 2), 'utf-8');
+      } catch {}
+    }
   } catch (e) { console.log('[CONFIG] Save error:', e.message); }
 }
 
@@ -253,6 +273,89 @@ client.on('messageCreate', async (message) => {
     message.reply('✅ Настроено ' + cnt + ' тикет-панелей');
     return;
   }
+
+  // Settings commands (works directly in Discord)
+  if (cmd === 'set') {
+    if (!message.member?.permissions.has('Administrator')) {
+      return message.reply('❌ Нужны права администратора');
+    }
+    const key = args[1]?.toLowerCase();
+    const val = args.slice(2).join(' ');
+
+    if (!key || !val) {
+      return message.reply('❌ Использование:\n`.set autorole @роль`\n`.set welcome #канал`\n`.set wmessage {mention}, добро пожаловать!`\n`.set wtype embed`');
+    }
+
+    // Resolve mentions
+    let value = val;
+    if (message.mentions.roles.size > 0) {
+      value = message.mentions.roles.first().id;
+    } else if (message.mentions.channels.size > 0) {
+      value = message.mentions.channels.first().id;
+    }
+
+    const settingMap = {
+      'autorole': 'autoRole',
+      'role': 'autoRole',
+      'welcome': 'welcomeChannel',
+      'wchannel': 'welcomeChannel',
+      'wmessage': 'welcomeMessage',
+      'wtype': 'welcomeType',
+      'wcolor': 'embedColor',
+      'wtitle': 'embedTitle',
+      'wfooter': 'embedFooter',
+      'wimage': 'welcomeImage'
+    };
+
+    const settingKey = settingMap[key];
+    if (!settingKey) {
+      return message.reply('❌ Неизвестная настройка. Доступно: autorole, welcome, wmessage, wtype, wcolor, wtitle, wfooter, wimage');
+    }
+
+    // Save to config
+    const config = loadConfig();
+    if (!config.botSettings) config.botSettings = {};
+    if (!config.botSettings[message.guild.id]) config.botSettings[message.guild.id] = {};
+    config.botSettings[message.guild.id][settingKey] = value;
+    saveConfig({ botSettings: config.botSettings });
+    // Update in-memory cache
+    if (!memConfig.botSettings) memConfig.botSettings = {};
+    if (!memConfig.botSettings[message.guild.id]) memConfig.botSettings[message.guild.id] = {};
+    memConfig.botSettings[message.guild.id][settingKey] = value;
+
+    // Show user-friendly value
+    let display = value;
+    if (settingKey === 'autoRole') {
+      const r = message.guild.roles.cache.get(value);
+      if (r) display = r.name;
+    } else if (settingKey === 'welcomeChannel') {
+      const ch = message.guild.channels.cache.get(value);
+      if (ch) display = '#' + ch.name;
+    }
+
+    console.log('[SET] ' + settingKey + '=' + display + ' for guild ' + message.guild.id);
+    message.reply('✅ `' + settingKey + '` → `' + display + '`');
+    return;
+  }
+
+  // Show current settings
+  if (cmd === 'settings' || cmd === 'config') {
+    if (!message.member?.permissions.has('Administrator')) return;
+    const s = getSettings(message.guild.id);
+    const lines = Object.entries(s).map(([k, v]) => {
+      if (k === 'autoRole') {
+        const r = message.guild.roles.cache.get(v);
+        return '  `' + k + '` → `' + (r ? r.name : v) + '`';
+      }
+      if (k === 'welcomeChannel') {
+        const ch = message.guild.channels.cache.get(v);
+        return '  `' + k + '` → `' + (ch ? '#' + ch.name : v) + '`';
+      }
+      return '  `' + k + '` → `' + v + '`';
+    });
+    message.channel.send('📋 **Текущие настройки:**\n' + (lines.length ? lines.join('\n') : '  Нет настроек'));
+    return;
+  }
 });
 
 // Ticket button handler
@@ -260,11 +363,8 @@ client.on('interactionCreate', async (interaction) => {
   if (!interaction.isButton()) return;
 
   if (interaction.customId.startsWith('close_')) {
-    if (!interaction.member?.permissions.has('Administrator')) {
-      return interaction.reply({ content: '\u274C Only admins can close tickets', ephemeral: true });
-    }
-    await interaction.reply({ content: '\uD83D\uDD12 Closing ticket...', ephemeral: true });
-    await interaction.channel.send('\uD83D\uDD12 Ticket closed by ' + interaction.user.username);
+    await interaction.reply({ content: '\uD83D\uDD12 Закрытие тикета...', ephemeral: true });
+    await interaction.channel.send('\uD83D\uDD12 Тикет закрыт ' + interaction.user.username);
     setTimeout(async () => {
       try { await interaction.channel.delete(); } catch {}
     }, 3000);
