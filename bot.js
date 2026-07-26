@@ -60,6 +60,7 @@ const server = http.createServer((req, res) => {
         saveConfig({ botSettings: config.botSettings });
         // Also update in-memory cache
         memConfig.botSettings = config.botSettings;
+        console.log('[API] Config saved for guild ' + guildId + ':', JSON.stringify(data));
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true }));
         console.log('[API] Config updated for', guildId, data);
@@ -122,7 +123,7 @@ client.on('guildDelete', (g) => console.log('[BOT] Removed from:', g.name || g.i
 client.on('guildMemberAdd', async (member) => {
   console.log('[GUILD_MEMBER_ADD] ' + member.user.tag + ' on ' + member.guild.name);
   const s = getSettings(member.guild.id);
-  console.log('[AUTO-ROLE] Checking config for ' + member.guild.id + ': autoRole=' + (s.autoRole || 'none'));
+  console.log('[SETTINGS] autoRole=' + (s.autoRole || 'none') + ' welcomeChannel=' + (s.welcomeChannel || 'none'));
   if (s.autoRole) {
     try { await member.roles.add(s.autoRole); console.log(`[AUTO-ROLE] ${member.user.tag}`); }
     catch (e) { console.log('[AUTO-ROLE ERROR]', e.message); }
@@ -264,7 +265,9 @@ client.on('interactionCreate', async (interaction) => {
     }
     await interaction.reply({ content: '\uD83D\uDD12 Closing ticket...', ephemeral: true });
     await interaction.channel.send('\uD83D\uDD12 Ticket closed by ' + interaction.user.username);
-    await interaction.channel.setArchived(true);
+    setTimeout(async () => {
+      try { await interaction.channel.delete(); } catch {}
+    }, 3000);
     return;
   }
 
