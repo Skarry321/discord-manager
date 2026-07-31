@@ -132,9 +132,78 @@ const client = new Client({
 client.on('error', (e) => console.log('[ERROR]', e.message));
 client.on('warn', (w) => console.log('[WARN]', w));
 
-client.on('ready', () => {
+// Auto-configure all guilds on startup
+async function autoConfigure(guild) {
+  try {
+    const guildId = guild.id;
+    const s = getSettings(guildId);
+    const changes = {};
+
+    // 1. Auto-role: find or create "Участник"
+    let role = guild.roles.cache.find(r => r.name === 'Участник' || r.name === 'Участники');
+    if (!s.autoRole || !guild.roles.cache.get(s.autoRole)) {
+      if (!role) {
+        role = await guild.roles.create({
+          name: 'Участник',
+          reason: 'Автоконфигурация бота'
+        });
+        console.log('[AUTO-CONFIG] Role created:', role.name, '(' + role.id + ')');
+      }
+      changes.autoRole = role.id;
+    }
+
+    // 2. Welcome channel: find general/общий/привет channel
+    if (!s.welcomeChannel || !guild.channels.cache.get(s.welcomeChannel)) {
+      let wch = null;
+      const names = ['общий', 'общение', 'чат', 'general', 'welcome', 'привет', 'болталка', 'флуд'];
+      for (const ch of guild.channels.cache.values()) {
+        if (ch.type === 0) { // text channel
+          const n = ch.name.toLowerCase();
+          if (names.some(k => n.includes(k))) { wch = ch; break; }
+        }
+      }
+      if (!wch) {
+        // fallback: system channel or first text channel
+        wch = guild.systemChannel || guild.channels.cache.find(c => c.type === 0);
+      }
+      if (wch) {
+        changes.welcomeChannel = wch.id;
+        console.log('[AUTO-CONFIG] Welcome channel:', '#' + wch.name, '(' + wch.id + ')');
+      }
+    }
+
+    // 3. Welcome message if not set
+    if (!s.welcomeMessage) {
+      changes.welcomeMessage = '👋 Добро пожаловать, {mention}!\nРады видеть тебя на сервере **{server}**!';
+    }
+
+    // Save changes
+    if (Object.keys(changes).length > 0) {
+      const config = loadConfig();
+      if (!config.botSettings) config.botSettings = {};
+      if (!config.botSettings[guildId]) config.botSettings[guildId] = {};
+      Object.assign(config.botSettings[guildId], changes);
+      saveConfig({ botSettings: config.botSettings });
+      if (!memConfig.botSettings) memConfig.botSettings = {};
+      if (!memConfig.botSettings[guildId]) memConfig.botSettings[guildId] = {};
+      Object.assign(memConfig.botSettings[guildId], changes);
+      console.log('[AUTO-CONFIG] Saved for', guild.name, JSON.stringify(changes));
+    } else {
+      console.log('[AUTO-CONFIG] Already configured for', guild.name);
+    }
+  } catch (e) {
+    console.log('[AUTO-CONFIG ERROR]', e.message);
+  }
+}
+
+client.on('ready', async () => {
   console.log(`[BOT] Connected as ${client.user?.tag}`);
   console.log(`[BOT] On ${client.guilds.cache.size} servers`);
+  // Auto-configure all guilds
+  for (const g of client.guilds.cache.values()) {
+    await autoConfigure(g);
+  }
+  console.log('[BOT] Auto-configuration complete');
 });
 
 client.on('guildCreate', (g) => console.log('[BOT] Added to:', g.name));
