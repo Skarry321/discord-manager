@@ -172,9 +172,32 @@ async function autoConfigure(guild) {
       }
     }
 
-    // 3. Welcome message if not set
+    // 3. Welcome message if not set (HideRealm custom)
     if (!s.welcomeMessage) {
-      changes.welcomeMessage = '👋 Добро пожаловать, {mention}!\nРады видеть тебя на сервере **{server}**!';
+      changes.welcomeMessage = 'Приветствуем тебя на Discord сервере Minecraft проекта HideRealm!\n\nHideRealm — это не просто сервер, это настоящее сообщество творческих и увлечённых людей, которые любят строить, исследовать и просто круто проводить время вместе. Здесь каждый найдёт что-то по душе: масштабные постройки, совместные вылазки, уютные посиделки в голосовых каналах и многое другое.\n\nНе бойся проявлять себя — задавай вопросы, предлагай идеи, участвуй в событиях. Мы ценим инициативу и всегда поддержим новичков!\n\nА теперь важный момент: чтобы всё было по-честному, загляни в канал {channel:правила} и возьми себе роли в самом верхнем разделе каналов — так ты сразу получишь доступ ко всем возможностям сервера.\n\nЕщё раз — добро пожаловать! Надеемся, ты останешься с нами надолго и проведёшь здесь массу незабываемых моментов.';
+    }
+
+    // 4. Embed title
+    if (!s.embedTitle) {
+      changes.embedTitle = 'Добро пожаловать на Discord-сервер HideRealm';
+    }
+
+    // 5. Footer
+    if (!s.embedFooter) {
+      changes.embedFooter = 'Приятной игры на HideRealm! ✨';
+    }
+
+    // 6. Color
+    if (!s.embedColor) {
+      changes.embedColor = '#ff8800';
+    }
+
+    // 7. Type embed + thumbnail position
+    if (!s.welcomeType) {
+      changes.welcomeType = 'embed';
+    }
+    if (!s.imagePosition) {
+      changes.imagePosition = 'thumbnail';
     }
 
     // Save changes
@@ -242,6 +265,19 @@ client.on('guildMemberAdd', async (member) => {
             embedImg = `attachment://welcome.${ext}`;
           }
         } else if (imgUrl) embedImg = imgUrl;
+
+        // Load local welcome.gif as thumbnail (top right corner)
+        let gifAttachment = null;
+        try {
+          const fs = require('fs');
+          const gifPath = path.join(__dirname, 'welcome.gif');
+          if (fs.existsSync(gifPath)) {
+            gifAttachment = new AttachmentBuilder(gifPath, { name: 'welcome.gif' });
+            files.push(gifAttachment);
+            if (!embedImg) embedImg = 'attachment://welcome.gif';
+          }
+        } catch {}
+
         if (s.welcomeType === 'embed') {
           const embed = { description: msg, color: parseInt((s.embedColor || '#7c3aed').replace('#', ''), 16) };
           if (s.embedTitle) embed.title = s.embedTitle.replace(/\{name\}/g, member.user.username);
@@ -423,6 +459,51 @@ client.on('messageCreate', async (message) => {
       return '  `' + k + '` → `' + v + '`';
     });
     message.channel.send('📋 **Текущие настройки:**\n' + (lines.length ? lines.join('\n') : '  Нет настроек'));
+    return;
+  }
+
+  // Test welcome message (admin only)
+  if (cmd === 'privet' || cmd === 'wtest') {
+    if (!message.member?.permissions.has('Administrator')) {
+      return message.reply('❌ Нужны права администратора');
+    }
+    try {
+      // Build welcome embed for testing
+      const s = getSettings(message.guild.id);
+      const target = message.member;
+      const msg = (s.welcomeMessage || 'Welcome {mention}!')
+        .replace(/\{name\}/g, target.user.username)
+        .replace(/\{mention\}/g, `<@${target.user.id}>`)
+        .replace(/\{server\}/g, message.guild.name)
+        .replace(/\{count\}/g, String(message.guild.memberCount || message.guild.members.cache.size))
+        .replace(/\{tag\}/g, target.user.tag)
+        .replace(/\{channel:([^}]+)\}/g, (_, n) => {
+          const ch = message.guild.channels.cache.find(c => c.name?.toLowerCase() === n.toLowerCase() || c.name?.toLowerCase().includes(n.toLowerCase()));
+          return ch ? `<#${ch.id}>` : `#${n}`;
+        });
+
+      const files = [];
+      let embedImg = '';
+      try {
+        const gifPath = path.join(__dirname, 'welcome.gif');
+        if (fs.existsSync(gifPath)) {
+          files.push(new AttachmentBuilder(gifPath, { name: 'welcome.gif' }));
+          embedImg = 'attachment://welcome.gif';
+        }
+      } catch {}
+
+      const embed = {
+        description: msg,
+        color: parseInt((s.embedColor || '#ff8800').replace('#', ''), 16),
+        title: (s.embedTitle || 'Добро пожаловать на Discord-сервер HideRealm').replace(/\{name\}/g, target.user.username),
+        footer: { text: (s.embedFooter || 'Приятной игры на HideRealm! ✨').replace(/\{name\}/g, target.user.username) }
+      };
+      if (embedImg) embed.thumbnail = { url: embedImg };
+      await message.channel.send({ embeds: [embed], files });
+      console.log('[PRIVET] Sent test welcome by ' + message.author.tag);
+    } catch (e) {
+      message.reply('❌ Ошибка: ' + e.message);
+    }
     return;
   }
 });
